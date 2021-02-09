@@ -33,19 +33,19 @@ export const routes = [
     redirect: "/guide/"
   },
   {
-    name: "v-28410c91",
-    path: "/guide/api.html",
-    component: GlobalLayout,
-    beforeEnter: (to, from, next) => {
-      ensureAsyncComponentsLoaded("Layout", "v-28410c91").then(next)
-    },
-  },
-  {
     name: "v-0ce80351",
     path: "/guide/getting-started.html",
     component: GlobalLayout,
     beforeEnter: (to, from, next) => {
       ensureAsyncComponentsLoaded("Layout", "v-0ce80351").then(next)
+    },
+  },
+  {
+    name: "v-28410c91",
+    path: "/guide/api.html",
+    component: GlobalLayout,
+    beforeEnter: (to, from, next) => {
+      ensureAsyncComponentsLoaded("Layout", "v-28410c91").then(next)
     },
   },
   {

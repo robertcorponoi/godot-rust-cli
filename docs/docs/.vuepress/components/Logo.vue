@@ -8,7 +8,8 @@
     />
     <h1>Godot Rust CLI</h1>
     <p>Easily use Rust with Godot</p>
-    <a href="/guide">Get Started →</a>
+    <p class="warning"><span>Note:</span> Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the <a href="https://github.com/robertcorponoi/godot-rust-cli" target="_blank">GitHub repo</a></p>
+    <a class="btn" href="/guide">Get Started →</a>
   </div>
 </template>
 
@@ -28,17 +29,26 @@
 
 .logo p {
   font-size: 1.6rem;
-  line-height: 1.3rem;
+  line-height: 2rem;
   color: #6a8bad;
-  margin-bottom: 2.5rem;
+  margin-bottom: 0;
 }
 
-.logo a {
+.logo span {
+  font-weight: bold;
+}
+
+.logo .warning {
+  font-size: 1.2rem;
+}
+
+.logo .btn {
   font-size: 1.1rem;
   background-color: #27aae2;
   color: #fff;
   border-radius: 0.2rem;
   padding: 1rem 2rem;
+  margin-top: 2rem;
   margin-bottom: 1.5rem;
 }
 </style>

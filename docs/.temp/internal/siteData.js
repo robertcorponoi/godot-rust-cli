@@ -12,7 +12,8 @@ export const siteData = {
       "regularPath": "/",
       "relativePath": "README.md",
       "key": "v-c74ea086",
-      "path": "/"
+      "path": "/",
+      "lastUpdated": "2/8/2021, 7:49:39 PM"
     },
     {
       "title": "Introduction",
@@ -20,7 +21,34 @@ export const siteData = {
       "regularPath": "/guide/",
       "relativePath": "guide/README.md",
       "key": "v-5061cfd0",
-      "path": "/guide/"
+      "path": "/guide/",
+      "lastUpdated": "2/8/2021, 7:49:39 PM"
+    },
+    {
+      "title": "Getting Started",
+      "frontmatter": {},
+      "regularPath": "/guide/getting-started.html",
+      "relativePath": "guide/getting-started.md",
+      "key": "v-0ce80351",
+      "path": "/guide/getting-started.html",
+      "headers": [
+        {
+          "level": 2,
+          "title": "Prerequisites",
+          "slug": "prerequisites"
+        },
+        {
+          "level": 2,
+          "title": "Installation",
+          "slug": "installation"
+        },
+        {
+          "level": 2,
+          "title": "Step-by-Step",
+          "slug": "step-by-step"
+        }
+      ],
+      "lastUpdated": "2/8/2021, 7:49:39 PM"
     },
     {
       "title": "API",
@@ -55,32 +83,8 @@ export const siteData = {
           "title": "plugin",
           "slug": "plugin"
         }
-      ]
-    },
-    {
-      "title": "Getting Started",
-      "frontmatter": {},
-      "regularPath": "/guide/getting-started.html",
-      "relativePath": "guide/getting-started.md",
-      "key": "v-0ce80351",
-      "path": "/guide/getting-started.html",
-      "headers": [
-        {
-          "level": 2,
-          "title": "Prerequisites",
-          "slug": "prerequisites"
-        },
-        {
-          "level": 2,
-          "title": "Installation",
-          "slug": "installation"
-        },
-        {
-          "level": 2,
-          "title": "Step-by-Step",
-          "slug": "step-by-step"
-        }
-      ]
+      ],
+      "lastUpdated": "2/8/2021, 7:49:39 PM"
     }
   ],
   "themeConfig": {
