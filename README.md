@@ -32,6 +32,8 @@ Godot Rust CLI is a simple command line interface to help you create and update 
 
 Using Rust in your Godot project is great for performance critical code and with Godot Rust CLI, you can create your entire project in Rust or you can mix it with new or existing gdscript.
 
+Currently, Godot Rust CLI supports creating Rust modules for Windows, MacOS, and Linux. If you need support for any other platform just put in a request as an issue in the GitHub repo and it'll be added if possible.
+
 **Note:** Godot Rust CLI is the successor to [Godot Rust Helper](https://github.com/robertcorponoi/godot_rust_helper). Godot Rust CLI aims to be much more simple but more strict. This also means that Godot Rust CLI doesn't have as many features and it enforces a much more strict project structure.
 
 ## Getting Started
@@ -64,7 +66,7 @@ This detailed guide will walk you through creating a library of Rust modules for
 
 1. The first step is to create a library to hold all of the Rust modules for your Godot project with the `new` command. Since libraries are meant to be easy to share, this has to be in the same directory as your Godot project.
 
-Let's assume that you have a Godot project named `platformer` and we wanted to make a library named `platformer_modules`. To create a library of modules for this project, you would use:
+For this guide, we're assuming that we're in a directory called Game and in that directory is a Godot project named `platformer` and we want to create a library of Rust modules named `platformer_modules`. To do this, we need to navigate to the Game directory and use:
 
 ```sh
 godot-rust-cli new platformer_modules platformer
