@@ -4,6 +4,8 @@
 
 ## Documentation
 
+Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the GitHub repo.
+
 You can use the documentation below or you can view the pretty docs [here]().
 
 **Table of Contents**
