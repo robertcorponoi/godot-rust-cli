@@ -27,6 +27,7 @@ module.exports = {
             '',
             'getting-started',
             'api',
+            'compatibility',
           ]
         },
       ],

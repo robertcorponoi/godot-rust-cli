@@ -49,6 +49,14 @@ export const routes = [
     },
   },
   {
+    name: "v-69cb4911",
+    path: "/guide/compatibility.html",
+    component: GlobalLayout,
+    beforeEnter: (to, from, next) => {
+      ensureAsyncComponentsLoaded("Layout", "v-69cb4911").then(next)
+    },
+  },
+  {
     path: '*',
     component: GlobalLayout
   }

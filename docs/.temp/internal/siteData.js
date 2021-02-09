@@ -22,7 +22,7 @@ export const siteData = {
       "relativePath": "guide/README.md",
       "key": "v-5061cfd0",
       "path": "/guide/",
-      "lastUpdated": "2/8/2021, 7:49:39 PM"
+      "lastUpdated": "2/8/2021, 8:31:42 PM"
     },
     {
       "title": "Getting Started",
@@ -85,6 +85,14 @@ export const siteData = {
         }
       ],
       "lastUpdated": "2/8/2021, 7:49:39 PM"
+    },
+    {
+      "title": "Compatibility",
+      "frontmatter": {},
+      "regularPath": "/guide/compatibility.html",
+      "relativePath": "guide/compatibility.md",
+      "key": "v-69cb4911",
+      "path": "/guide/compatibility.html"
     }
   ],
   "themeConfig": {
@@ -103,7 +111,8 @@ export const siteData = {
           "children": [
             "",
             "getting-started",
-            "api"
+            "api",
+            "compatibility"
           ]
         }
       ]

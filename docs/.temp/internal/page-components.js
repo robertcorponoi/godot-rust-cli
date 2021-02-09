@@ -5,5 +5,6 @@ export default {
   "v-c74ea086": () => import("C:\\Users\\Bob\\Documents\\Projects\\godot-rust-cli\\docs\\docs\\README.md"),
   "v-5061cfd0": () => import("C:\\Users\\Bob\\Documents\\Projects\\godot-rust-cli\\docs\\docs\\guide\\README.md"),
   "v-0ce80351": () => import("C:\\Users\\Bob\\Documents\\Projects\\godot-rust-cli\\docs\\docs\\guide\\getting-started.md"),
-  "v-28410c91": () => import("C:\\Users\\Bob\\Documents\\Projects\\godot-rust-cli\\docs\\docs\\guide\\api.md") 
+  "v-28410c91": () => import("C:\\Users\\Bob\\Documents\\Projects\\godot-rust-cli\\docs\\docs\\guide\\api.md"),
+  "v-69cb4911": () => import("C:\\Users\\Bob\\Documents\\Projects\\godot-rust-cli\\docs\\docs\\guide\\compatibility.md") 
 }
