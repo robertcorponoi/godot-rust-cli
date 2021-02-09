@@ -19,6 +19,7 @@ You can use the documentation below or you can view the pretty docs [here]().
   - [destroy](#destroy)
   - [build](#build)
   - [plugin](#plugin)
+- [Compatibility](#compatibility)
 - [License](#license)
 
 ## Introduction
@@ -238,6 +239,12 @@ Creating a plugin named Directory Browser:
 ```sh
 godot-rust-cli plugin "Directory Browser"
 ```
+
+# Compatibility
+
+| Godot Rust Version | Godot Rust CLI Version |
+|--------------------|------------------------|
+| 0.9.3              | >=0.1.1                |
 
 ## License
 
