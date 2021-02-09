@@ -6,4 +6,6 @@ Godot Rust CLI is a simple command line interface to help you create and update 
 
 Using Rust in your Godot project is great for performance critical code and with Godot Rust CLI, you can create your entire project in Rust or you can mix it with new or existing gdscript.
 
+Currently, Godot Rust CLI supports creating Rust modules for Windows, MacOS, and Linux. If you need support for any other platform just put in a request as an issue in the GitHub repo and it'll be added if possible.
+
 **Note:** Godot Rust CLI is the successor to [Godot Rust Helper](https://github.com/robertcorponoi/godot_rust_helper). Godot Rust CLI aims to be much more simple but also more strict.

@@ -28,7 +28,7 @@ This detailed guide will walk you through creating a library of Rust modules for
 
 1. The first step is to create a library to hold all of the Rust modules for your Godot project with the `new` command. Since libraries are meant to be easy to share, this has to be in the same directory as your Godot project.
 
-Let's assume that you have a Godot project named `platformer` and we wanted to make a library named `platformer_modules`. To create a library of modules for this project, you would use:
+For this guide, we're assuming that we're in a directory called Game and in that directory is a Godot project named `platformer` and we want to create a library of Rust modules named `platformer_modules`. To do this, we need to navigate to the Game directory and use:
 
 ```sh
 godot-rust-cli new platformer_modules platformer
@@ -68,8 +68,8 @@ godot-rust-cli build --watch
 
 4. Now that you created and built the module, you should head over to your Godot project to use it. 
 
-First you have to add the appropriate node to the scene tree. This node type should correspond to the node type that your script inherits.
+First you have to add the appropriate node to the scene tree. This node type should correspond to the node type that your script inherits. In this basic example we left the demo script as it is when it was generated so our node type is `Node2D`.
 
-Next, with the node selected, you have to go to the right sidebar and in the Script dropdown choose load, and then choose the module from the `rust_modules` folder. Now when you press play, you should see your module work.
+Next, with the node selected, you have to go to the right sidebar and in the Script dropdown, choose load and then choose the module from the `rust_modules` folder. Now when you press play, you should see your module work.
 
 Anytime you make changes to your Rust module and build, you don't have to do anything else in the Godot project, you can just hit play and see the latest changes you applied.
