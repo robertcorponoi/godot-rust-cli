@@ -28,13 +28,30 @@ This detailed guide will walk you through creating a library of Rust modules for
 
 1. The first step is to create a library to hold all of the Rust modules for your Godot project with the `new` command. Since libraries are meant to be easy to share, this has to be in the same directory as your Godot project.
 
-For this guide, we're assuming that we're in a directory called Game and in that directory is a Godot project named `platformer` and we want to create a library of Rust modules named `platformer_modules`. To do this, we need to navigate to the Game directory and use:
+For this guide, we're assuming that we're in a directory called Game and in that directory is a Godot project named `platformer` and we want to create a library of Rust modules named `platformer_modules` like so:
+
+```
+Documents
+    Game
+        platformer
+```
+
+To do this, we need to navigate to the Game directory and use:
 
 ```sh
 godot-rust-cli new platformer_modules platformer
 ```
 
 What this will do is create a new cargo library in the current directory with everything needed to create and build Rust modules. This also contains a `project.toml` file used by Godot Rust CLI to keep track of what modules have been created and the name of the Godot project used when running commands.
+
+Your directory structure should now look like:
+
+```
+Documents
+    Game
+        platformer
+        platformer_modules
+```
 
 2. Switch to the newly created `platformer_modules` directory:
 
