@@ -1,0 +1,6 @@
+[plugin]
+name = "PLUGIN_NAME"
+description = ""
+author = ""
+version = "1.0"
+script = "PLUGIN_GDNS_LOCATION"
