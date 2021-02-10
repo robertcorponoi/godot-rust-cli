@@ -8,6 +8,8 @@ Godot Rust CLI requires the following prerequisites:
 
 - The latest version of [Rust](https://www.rust-lang.org/tools/install).
 
+- `rustfmt` - This is need to format files after creating/editing them. You can install this with `rustup component add rustfmt`.
+
 ## Installation
 
 To install Godot Rust CLI, use:

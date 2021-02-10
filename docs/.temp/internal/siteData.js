@@ -8,23 +8,6 @@ export const siteData = {
   "headTags": [],
   "pages": [
     {
-      "frontmatter": {},
-      "regularPath": "/",
-      "relativePath": "README.md",
-      "key": "v-c74ea086",
-      "path": "/",
-      "lastUpdated": "2/8/2021, 7:49:39 PM"
-    },
-    {
-      "title": "Introduction",
-      "frontmatter": {},
-      "regularPath": "/guide/",
-      "relativePath": "guide/README.md",
-      "key": "v-5061cfd0",
-      "path": "/guide/",
-      "lastUpdated": "2/8/2021, 8:31:42 PM"
-    },
-    {
       "title": "Getting Started",
       "frontmatter": {},
       "regularPath": "/guide/getting-started.html",
@@ -48,6 +31,14 @@ export const siteData = {
           "slug": "step-by-step"
         }
       ],
+      "lastUpdated": "2/8/2021, 9:32:27 PM"
+    },
+    {
+      "frontmatter": {},
+      "regularPath": "/",
+      "relativePath": "README.md",
+      "key": "v-c74ea086",
+      "path": "/",
       "lastUpdated": "2/8/2021, 7:49:39 PM"
     },
     {
@@ -92,7 +83,17 @@ export const siteData = {
       "regularPath": "/guide/compatibility.html",
       "relativePath": "guide/compatibility.md",
       "key": "v-69cb4911",
-      "path": "/guide/compatibility.html"
+      "path": "/guide/compatibility.html",
+      "lastUpdated": "2/8/2021, 8:47:39 PM"
+    },
+    {
+      "title": "Introduction",
+      "frontmatter": {},
+      "regularPath": "/guide/",
+      "relativePath": "guide/README.md",
+      "key": "v-5061cfd0",
+      "path": "/guide/",
+      "lastUpdated": "2/8/2021, 9:25:27 PM"
     }
   ],
   "themeConfig": {
