@@ -1,0 +1,14 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+before_install:
+  - rustup component add rustfmt
+script:
+  - cargo build
+  - cargo test -- --test-threads=1
