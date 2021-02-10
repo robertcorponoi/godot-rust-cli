@@ -2,6 +2,11 @@
 
 <p align="center">Godot Rust CLI is an easy to incorporate Rust modules into your Godot project.</p>
 
+[![Build Status](https://www.travis-ci.com/robertcorponoi/godot-rust-cli.svg?branch=main)](https://www.travis-ci.com/robertcorponoi/godot-rust-cli)
+![Crates.io](https://img.shields.io/crates/v/godot-rust-cli)
+![Crates.io](https://img.shields.io/crates/d/godot-rust-cli)
+![Crates.io](https://img.shields.io/crates/l/godot-rust-cli)
+
 ## Documentation
 
 Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the GitHub repo.
