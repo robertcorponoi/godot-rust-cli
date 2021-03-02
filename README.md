@@ -1,3 +1,7 @@
+<p align="center">
+  <img width="250" height="250" src="https://raw.githubusercontent.com/robertcorponoi/graphics/60af78e2ae65013129571a273d2a9cb456c687f6/godot-rust-cli/logo/godot-rust-cli-logo.svg">
+</p>
+
 <h1 align="center">Godot Rust CLI</h1>
 
 <p align="center">Godot Rust CLI is an easy to incorporate Rust modules into your Godot project.</p>
