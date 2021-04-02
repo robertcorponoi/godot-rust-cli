@@ -408,7 +408,6 @@ pub fn command_build() {
     .expect("Unable to run cargo build");
   if !cargo_build.success() {
     print_to_console("Build failed", ConsoleColors::RED);
-    exit(1);
   }
 
   // Get the name of the library from the file name of the current directory.
