@@ -50,5 +50,5 @@ fn create_cargo_lib() -> CargoLib {
 /// is used by the CargoDependencies struct to add the gdnative dependency that
 /// is necessary.
 fn add_gdnative_dep() -> String {
-  return String::from("0.9.1");
+  return String::from("0.9.3");
 }

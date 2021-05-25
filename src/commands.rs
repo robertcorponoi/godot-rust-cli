@@ -96,7 +96,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf) {
   write("Cargo.toml", new_library_cargo_toml_string)
     .expect("Unable to update contents of the library's Cargo.toml file");
 
-  // Create the project.toml config file and write it to the library
+  // Create the godot-rust-cli config file and write it to the library
   // directory, returning early if there was a problem.
   let config = Configuration {
     godot_project_name: godot_absolute_path
@@ -108,7 +108,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf) {
     modules: vec![],
   };
   let config_string = toml::to_string(&config).expect("Unable to convert config to string");
-  write("project.toml", config_string).expect("Unable to create project.toml file");
+  write("godot-rust-cli.toml", config_string).expect("Unable to create godot-rust-cli.toml file");
 
   // Create the initial src/lib.rs file in the library.
   let lib_template = include_str!("./templates/lib.rs");
@@ -153,7 +153,7 @@ pub fn command_create(name: &str, is_plugin: bool) {
   // of a project.json file.
   check_if_lib_dir();
 
-  // Get the contents of the project.toml file.
+  // Get the contents of the godot-rust-cli.toml file.
   let mut project_toml = get_project_toml_as_object();
 
   // We need various different casings of the module name.
@@ -270,7 +270,7 @@ pub fn command_create(name: &str, is_plugin: bool) {
     write(godot_plugin_cfg, plugin_cfg_with_script).expect("Unable to write plugin.cfg file");
   }
 
-  // Add the module to the project.toml
+  // Add the module to the godot-rust-cli.toml
   project_toml
     .modules
     .push(module_name_pascal_case.to_string());
@@ -291,13 +291,13 @@ pub fn command_destroy(name: &str) {
   // be run from there.
   check_if_lib_dir();
 
-  // Get the current modules from the project.toml.
+  // Get the current modules from the godot-rust-cli.toml.
   let mut project_toml = get_project_toml_as_object();
 
   let module_name_pascal_case = name.to_case(Case::Pascal);
   let module_name_snake_case = name.to_case(Case::Snake);
 
-  // If the name of the module to destroy is not in the project.toml, then it
+  // If the name of the module to destroy is not in the godot-rust-cli.toml, then it
   // shouldn't exist and can't be destroyed.
   if !&project_toml
     .modules
@@ -308,7 +308,7 @@ pub fn command_destroy(name: &str) {
     exit(1);
   }
 
-  // Remove the module from the project.toml and save the changes.
+  // Remove the module from the godot-rust-cli.toml and save the changes.
   let index_of_module_to_remove = project_toml
     .modules
     .iter()
@@ -370,7 +370,7 @@ pub fn command_destroy(name: &str) {
     .join(gdns_file_name);
   remove_file(gdns_path).expect("Unable to remove module's gdns file");
 
-  // Save the changes to the project.toml config file.
+  // Save the changes to the godot-rust-cli.toml config file.
   set_project_toml_contents(project_toml);
 
   // Since the module being destroyed could be a plugin, we need to check the

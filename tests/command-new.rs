@@ -24,7 +24,7 @@ fn new_library_has_correct_cargo_toml() -> Result<(), Box<dyn Error>> {
   assert_eq!(cargo_toml_split[6], "[lib]");
   assert_eq!(cargo_toml_split[7], "crate-type = [\"cdylib\"]");
   assert_eq!(cargo_toml_split[9], "[dependencies]");
-  assert_eq!(cargo_toml_split[10], "gdnative = \"0.9.1\"");
+  assert_eq!(cargo_toml_split[10], "gdnative = \"0.9.3\"");
 
   cleanup_test_files();
 
@@ -76,7 +76,7 @@ fn new_library_has_correct_project_toml() -> Result<(), Box<dyn Error>> {
 
   cmd.assert().success();
 
-  let config = read_to_string("platformer_modules/project.toml").expect("Unable to read config");
+  let config = read_to_string("platformer_modules/godot-rust-cli.toml").expect("Unable to read config");
   let config_split = config.split("\n").collect::<Vec<&str>>();
 
   let gdnlib_path = Path::new("platformer/platformer_modules.gdnlib");

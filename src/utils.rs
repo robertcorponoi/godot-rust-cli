@@ -72,11 +72,11 @@ pub fn check_if_lib_dir() {
   }
 }
 
-/// Returns the contents of the project.toml as a Config object.
+/// Returns the contents of the godot-rust-cli.toml as a Config object.
 pub fn get_project_toml_as_object() -> Configuration {
   let project_toml_path = get_project_toml_path();
-  let project_toml_string = read_to_string(project_toml_path).expect("Unable to read project.toml");
-  return toml::from_str(&project_toml_string).expect("Unable to parse project.toml");
+  let project_toml_string = read_to_string(project_toml_path).expect("Unable to read godot-rust-cli.toml");
+  return toml::from_str(&project_toml_string).expect("Unable to parse godot-rust-cli.toml");
 }
 
 /// Returns the path to the dynamic libraries.
@@ -85,9 +85,9 @@ pub fn get_dynamic_libraries_path() -> PathBuf {
   return Path::new(&curr_dir).join("target").join("debug");
 }
 
-/// Writes the new contents to the project.toml.
+/// Writes the new contents to the godot-rust-cli.toml.
 ///
-/// `new_project_toml_contents` - The new contents of the project.toml to write to the file.
+/// `new_project_toml_contents` - The new contents of the godot-rust-cli.toml to write to the file.
 pub fn set_project_toml_contents(new_project_toml_contents: Configuration) {
   let project_toml_path = get_project_toml_path();
   let new_project_toml_string = toml::to_string(&new_project_toml_contents)
@@ -102,10 +102,10 @@ pub fn set_project_toml_contents(new_project_toml_contents: Configuration) {
   }
 }
 
-/// Returns the path to the project.toml.
+/// Returns the path to the godot-rust-cli.toml.
 fn get_project_toml_path() -> PathBuf {
   let curr_dir = current_dir().expect("Unable to get current directory");
-  return Path::new(&curr_dir).join("project.toml");
+  return Path::new(&curr_dir).join("godot-rust-cli.toml");
 }
 
 /// Returns the build file extension for windows.
@@ -126,11 +126,11 @@ pub fn get_dynamic_library_ext() -> &'static str {
   return "dylib";
 }
 
-/// Indicates whether a module is present in the project.toml or not.
+/// Indicates whether a module is present in the godot-rust-cli.toml or not.
 ///
 /// # Arguments
 ///
-/// `modules` - The modules from the project.toml file.
+/// `modules` - The modules from the godot-rust-cli.toml file.
 /// `module_name` - The module to check if exists or not.
 pub fn is_module_in_project_toml(modules: &Vec<String>, module_name: &str) -> bool {
   if modules.iter().any(|i| i == module_name) {
@@ -191,7 +191,7 @@ where
 ///
 /// # Arguments
 ///
-/// `modules` - A copy of the current modules from the project.toml file.
+/// `modules` - A copy of the current modules from the godot-rust-cli.toml file.
 /// `lib_file_contents` - The string contents of the lib file to add the module to.
 /// `module_name` - The name of the new module to add to the lib file.
 pub fn get_insert_location(
@@ -237,7 +237,7 @@ pub fn get_insert_location(
     //   .get(1)
     //   .expect("Unable to get capture group");
 
-    // // If this capture group matches one of the modules from the project.toml
+    // // If this capture group matches one of the modules from the godot-rust-cli.toml
     // // then we remove that module since it already exists.
     // let module_to_remove_index = modules_copy
     //   .iter()

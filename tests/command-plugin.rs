@@ -27,7 +27,7 @@ fn plugin_add_name_to_library_project_toml() -> Result<(), Box<dyn Error>> {
     .output()
     .expect("Unable to execute cargo run");
 
-  let config = read_to_string("project.toml").expect("Unable to read config");
+  let config = read_to_string("godot-rust-cli.toml").expect("Unable to read config");
   let config_split = config.split("\n").collect::<Vec<&str>>();
 
   assert_eq!(config_split[0], "godot_project_name = \"platformer\"");
@@ -267,7 +267,7 @@ fn plugin_destroy_remove_from_library_lib_file_and_godot_project_rust_modules_an
   let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
   let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
 
-  let config_file = read_to_string("project.toml").expect("Unable to read config file");
+  let config_file = read_to_string("godot-rust-cli.toml").expect("Unable to read config file");
   let config_split = config_file.split("\n").collect::<Vec<&str>>();
 
   let plugin_file_path = Path::new("src/directory_browser.rs");
@@ -355,7 +355,7 @@ fn plugin_destroy_create_three_modules_and_two_plugins_remove_one_module_and_one
   let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
   let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
 
-  let config_file = read_to_string("project.toml").expect("Unable to read config file");
+  let config_file = read_to_string("godot-rust-cli.toml").expect("Unable to read config file");
   let config_split = config_file.split("\n").collect::<Vec<&str>>();
 
   let player_mod_file_path = Path::new("src/player.rs");

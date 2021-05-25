@@ -27,7 +27,7 @@ fn create_add_module_name_as_pascalcase_to_project_toml_modules() -> Result<(), 
     .output()
     .expect("Unable to execute cargo run");
 
-  let config = read_to_string("project.toml").expect("Unable to read config");
+  let config = read_to_string("godot-rust-cli.toml").expect("Unable to read config");
   let config_split = config.split("\n").collect::<Vec<&str>>();
 
   assert_eq!(config_split[0], "godot_project_name = \"platformer\"");
@@ -209,7 +209,7 @@ fn create_module_name_casing_normalized() -> Result<(), Box<dyn Error>> {
     .output()
     .expect("Unable to execute cargo run");
 
-  let config_file = read_to_string("project.toml").expect("Unable to read config file");
+  let config_file = read_to_string("godot-rust-cli.toml").expect("Unable to read config file");
   let mod_file = read_to_string("src/main_scene.rs").expect("Unable to read module file");
   let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
 
@@ -267,7 +267,7 @@ fn create_multiple_modules_should_have_gdns_files_created() -> Result<(), Box<dy
   let player_ns_file_path = Path::new("../platformer/rust_modules/player.gdns");
   let main_scene_ns_file_path = Path::new("../platformer/rust_modules/main_scene.gdns");
 
-  let config_file = read_to_string("project.toml").expect("Unable to read config file");
+  let config_file = read_to_string("godot-rust-cli.toml").expect("Unable to read config file");
   let config_split = config_file.split("\n").collect::<Vec<&str>>();
 
   assert_eq!(player_file_path.exists(), true);

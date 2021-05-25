@@ -38,7 +38,7 @@ fn destroy_remove_module_from_library_lib_file_and_godot_project_rust_modules(
   let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
   let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
 
-  let config_file = read_to_string("project.toml").expect("Unable to read config file");
+  let config_file = read_to_string("godot-rust-cli.toml").expect("Unable to read config file");
   let config_split = config_file.split("\n").collect::<Vec<&str>>();
 
   let mod_file_path = Path::new("src/player.rs");
@@ -124,7 +124,7 @@ fn destroy_create_five_modules_remove_two_modules() -> Result<(), Box<dyn Error>
   let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
   let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
 
-  let config_file = read_to_string("project.toml").expect("Unable to read config file");
+  let config_file = read_to_string("godot-rust-cli.toml").expect("Unable to read config file");
   let config_split = config_file.split("\n").collect::<Vec<&str>>();
 
   let player_mod_file_path = Path::new("src/player.rs");
