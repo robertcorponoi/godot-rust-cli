@@ -14,7 +14,7 @@ fn plugin_add_name_to_library_project_toml() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -45,7 +45,7 @@ fn plugin_has_correct_plugin_cfg_in_godot_project() -> Result<(), Box<dyn Error>
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -87,7 +87,7 @@ fn plugin_has_correct_initial_module_file() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -158,7 +158,7 @@ fn plugin_has_correct_gdns_file_in_godot_project_rust_modules() -> Result<(), Bo
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -209,7 +209,7 @@ fn plugin_mod_and_handle_added_to_lib_file() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -244,7 +244,7 @@ fn plugin_destroy_remove_from_library_lib_file_and_godot_project_rust_modules_an
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -297,7 +297,7 @@ fn plugin_destroy_create_three_modules_and_two_plugins_remove_one_module_and_one
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 

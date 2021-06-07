@@ -45,6 +45,12 @@ enum GodotRustCli {
         /// library of components is for.
         #[structopt(parse(from_os_str))]
         godot_project_dir: PathBuf,
+
+        /// Indicates whether automatic build of the library after creation
+        /// should be skipped or not. The build is not necessary but ensures
+        /// that there's no missing dynamic library error in Godot.
+        #[structopt(long, short)]
+        skip_build: bool,
     },
 
     /// Creates a new Rust component inside the current library.
@@ -93,7 +99,8 @@ fn main() {
         GodotRustCli::New {
             name,
             godot_project_dir,
-        } => command_new::create_library(&name, godot_project_dir),
+            skip_build,
+        } => command_new::create_library(&name, godot_project_dir, skip_build),
         GodotRustCli::Create { name } => command_create::create_module(&name, false),
         GodotRustCli::Destroy { name } => command_destroy::destroy_module(&name),
         GodotRustCli::Build { watch } => {

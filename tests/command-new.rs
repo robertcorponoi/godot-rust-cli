@@ -13,7 +13,7 @@ fn new_library_has_correct_cargo_toml() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -36,7 +36,7 @@ fn new_godot_project_has_rust_modules_directory() -> Result<(), Box<dyn Error>> 
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -53,7 +53,7 @@ fn new_library_name_is_snake_case() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer-modules").arg("platformer");
+  cmd.arg("new").arg("platformer-modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -72,7 +72,7 @@ fn new_library_has_correct_project_toml() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -96,7 +96,7 @@ fn new_has_initial_lib_file() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -119,7 +119,7 @@ fn new_godot_project_has_correct_gdnlib_file() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 

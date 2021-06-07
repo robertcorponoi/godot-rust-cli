@@ -5,6 +5,7 @@ use std::process::{exit, Command};
 
 use convert_case::{Case, Casing};
 
+use crate::command_build::build_library;
 use crate::config_utils::create_initial_config;
 use crate::definitions::CargoToml;
 use crate::file_utils::write_and_fmt;
@@ -17,7 +18,8 @@ use crate::path_utils::get_absolute_path;
 ///
 /// `name` - The name of the library.
 /// `godot_project_dir` - The relative path to the directory of the Godot project that this library of modules is for.
-pub fn create_library(name: &str, godot_project_dir: PathBuf) {
+/// `skip_build` - Indicates whether the build should be skipped after creating the library or not.
+pub fn create_library(name: &str, godot_project_dir: PathBuf, skip_build: bool) {
     log_styled_message_to_console("Creating library", ConsoleColors::WHITE);
 
     // Normalize the library name so that we can be consistent.
@@ -47,6 +49,14 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf) {
 
     create_rust_modules_dir_in_godot(&godot_project_absolute_path);
     create_gdnlib_in_godot(&library_name_normalized, &godot_project_absolute_path);
+
+    log_styled_message_to_console(
+        "running initial build to generate Godot project structure",
+        ConsoleColors::CYAN,
+    );
+    if !skip_build {
+        build_library();
+    }
 
     log_styled_message_to_console("library created", ConsoleColors::GREEN);
 }
