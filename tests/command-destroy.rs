@@ -15,7 +15,7 @@ fn destroy_remove_module_from_library_lib_file_and_godot_project_rust_modules(
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -66,7 +66,7 @@ fn destroy_create_five_modules_remove_two_modules() -> Result<(), Box<dyn Error>
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 

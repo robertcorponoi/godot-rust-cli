@@ -14,7 +14,7 @@ fn create_add_module_name_as_pascalcase_to_project_toml_modules() -> Result<(), 
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -45,7 +45,7 @@ fn create_add_module_mod_and_handle_to_to_lib_file() -> Result<(), Box<dyn Error
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -85,7 +85,7 @@ fn create_module_has_correct_initial_module_file() -> Result<(), Box<dyn Error>>
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -142,7 +142,7 @@ fn create_module_gdns_file_in_godot_project_rust_modules_directory() -> Result<(
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -196,7 +196,7 @@ fn create_module_name_casing_normalized() -> Result<(), Box<dyn Error>> {
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -241,7 +241,7 @@ fn create_multiple_modules_should_have_gdns_files_created() -> Result<(), Box<dy
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
@@ -289,7 +289,7 @@ fn create_multiple_modules_should_be_added_to_lib_file() -> Result<(), Box<dyn E
   init_test();
 
   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-  cmd.arg("new").arg("platformer_modules").arg("platformer");
+  cmd.arg("new").arg("platformer_modules").arg("platformer").arg("--skip-build");
 
   cmd.assert().success();
 
