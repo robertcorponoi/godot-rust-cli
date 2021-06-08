@@ -32,7 +32,7 @@ pub fn get_path_to_config_file() -> PathBuf {
 pub fn create_initial_config(godot_project_name: String) {
     let config = Config {
         godot_project_name: godot_project_name,
-        modules: vec![],
+        modules: HashMap::new(),
     };
     let config_as_json =
         serde_json::to_string_pretty(&config).expect("Unable to create initial configuration");
@@ -54,7 +54,7 @@ pub fn get_config_as_object() -> Config {
 /// # Arguments
 ///
 /// `config` - The configuration to save.
-pub fn save_config_to_file(config: Config) {
+pub fn save_config_to_file(config: &mut Config) {
     let config_file_path = get_path_to_config_file();
     let config_as_string =
         serde_json::to_string_pretty(&config).expect("Unable to parse configuration");
@@ -80,7 +80,7 @@ pub fn add_module_to_config(
     module_path_in_godot: String,
     config: Option<Config>,
 ) {
-    let config_to_use = match config {
+    let mut config_to_use = match config {
         Some(v) => v,
         None => get_config_as_object(),
     };
@@ -88,7 +88,7 @@ pub fn add_module_to_config(
         .modules
         .insert(module_name, module_path_in_godot);
 
-    save_config_to_file(config_to_use);
+    save_config_to_file(&mut config_to_use);
 }
 
 /// Indicates whether a module is present in the config or not.
@@ -96,14 +96,9 @@ pub fn add_module_to_config(
 /// # Arguments
 ///
 /// `module_name` - The module to check if exists or not.
-/// `config` - Can be passed if the config is already in memory.
-pub fn is_module_in_config(module_name: &str, config: Option<Config>) -> bool {
-    let config_to_use = match config {
-        Some(v) => v,
-        None => get_config_as_object(),
-    };
-
-    return config_to_use.modules.contains_key(module_name);
+/// `config` - The configuration file.
+pub fn is_module_in_config(module_name: &str, config: &mut Config) -> bool {
+    return config.modules.contains_key(module_name);
 }
 
 /// Removes a module from the config file if it exists.
@@ -111,22 +106,16 @@ pub fn is_module_in_config(module_name: &str, config: Option<Config>) -> bool {
 /// # Arguments
 ///
 /// `module_name` - The name of the module to remove from the config file.
-/// `config` - Can be passed if the config is already in memory.
-pub fn remove_module_from_config_if_exists(module_name: &str, config: Option<Config>) {
-    let config_to_use = match config {
-        Some(v) => v,
-        None => get_config_as_object(),
-    };
-
+/// `config` - The configuration file.
+pub fn remove_module_from_config_if_exists(module_name: &str, config: &mut Config) {
     let module_name_pascal_case = module_name.to_case(Case::Pascal);
-    let module_exists_in_config =
-        is_module_in_config(&module_name_pascal_case, Some(config_to_use));
+    let module_exists_in_config = is_module_in_config(&module_name_pascal_case, config);
 
     if !module_exists_in_config {
         log_styled_message_to_console("The module to remove doesn't exist", ConsoleColors::RED);
         exit(1);
     }
-    config_to_use.modules.remove(module_name);
+    config.modules.remove(module_name);
 
-    save_config_to_file(config_to_use);
+    save_config_to_file(config);
 }

@@ -24,7 +24,9 @@ pub fn create_module(name: &str, is_plugin: bool) {
     let module_name_snake_case = name.to_case(Case::Snake);
 
     // The mutable contents of the configuration file.
-    let config = get_config_as_object();
+    let mut config = get_config_as_object();
+
+    let godot_project_name = config.godot_project_name.clone();
 
     // The path to the Godot project.
     let path_to_godot_project = parent_dir.join(&config.godot_project_name);
@@ -33,7 +35,7 @@ pub fn create_module(name: &str, is_plugin: bool) {
 
     exit_if_not_lib_dir();
 
-    if is_module_in_config(&module_name_snake_case, Some(config)) {
+    if is_module_in_config(&module_name_snake_case, &mut config) {
         // If there's already a module with the same name in the config, then
         // we exist early to avoid creating duplicates.
         log_styled_message_to_console(
@@ -43,13 +45,13 @@ pub fn create_module(name: &str, is_plugin: bool) {
     }
     create_initial_module_file(name, is_plugin);
 
-    add_module_to_lib(name, is_plugin, Some(config));
+    add_module_to_lib(name, is_plugin, config);
 
     // Create the module's corresponding gdns file.
-    create_gdns_file_in_godot_project(name, &config.godot_project_name);
+    create_gdns_file_in_godot_project(name, &godot_project_name);
 
     if is_plugin {
-        create_plugin_structure_in_godot_project(name, path_to_godot_project)
+        create_plugin_structure_in_godot_project(name, &path_to_godot_project)
     }
 
     // Create the path to the module in Godot, then turn it into a string so
@@ -61,11 +63,7 @@ pub fn create_module(name: &str, is_plugin: bool) {
         .to_str()
         .expect("Unable to create path to module in Godot")
         .to_string();
-    add_module_to_config(
-        module_name_snake_case,
-        path_to_module_in_godot_str,
-        Some(config),
-    );
+    add_module_to_config(module_name_snake_case, path_to_module_in_godot_str, None);
 
     log_styled_message_to_console("Module created", ConsoleColors::GREEN);
 }
@@ -75,7 +73,7 @@ pub fn create_module(name: &str, is_plugin: bool) {
 /// `godot_project_path` - The path to the Godot project.
 /// `module_name` - The name of the plugin module to create.
 /// `normalized_module_name` - The normalized name of the plugin module to create.
-fn create_plugin_structure_in_godot_project(module_name: &str, godot_project_path: PathBuf) {
+fn create_plugin_structure_in_godot_project(module_name: &str, godot_project_path: &PathBuf) {
     let module_name_snake_case = &module_name.to_case(Case::Snake);
 
     let godot_plugin_dir = godot_project_path

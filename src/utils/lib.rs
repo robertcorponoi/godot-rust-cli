@@ -24,25 +24,14 @@ pub fn get_lib_file_contents() -> String {
 ///
 /// `line_pattern` - The regex pattern to use to look for the line before the insert location.
 /// `is_first` - Indicates whether this is the first module being added.
-/// `config` - An optional parameter to pass the config to use.
-/// `lib_contents` - An optional parameter to pass the lib contents to use.
+/// `config` - The config to use.
+/// `lib_contents` - The contents of the lib file.
 pub fn get_insert_location(
     line_pattern: &str,
     is_first: bool,
-    config: Option<Config>,
-    lib_contents: Option<String>,
+    config: &Config,
+    lib_contents: &String,
 ) -> (usize, HashMap<String, String>) {
-    // Either use the config passed to us or get a local copy of it.
-    let config_to_use = match config {
-        Some(v) => v,
-        None => get_config_as_object(),
-    };
-    // Either use the lib contents passed to us or get a local copy of it.
-    let lib_file_contents_to_use = match lib_contents {
-        Some(v) => v,
-        None => get_lib_file_contents(),
-    };
-
     // Since we want to add our new module after all of the currently existing
     // ones, we need to keep updating the insert position to the end position of
     // the last module found.
@@ -50,13 +39,13 @@ pub fn get_insert_location(
 
     // Create a copy of the modules hashmap so that we don't have to modify the
     // original one.
-    let modules_copy = config_to_use.modules.clone();
+    let modules_copy = config.modules.clone();
 
     // Create the regex pattern used to check for the lines that might contain
     // our module definitions.
     let line_regex = Regex::new(line_pattern).expect("Unable to create regex");
 
-    for line_match in line_regex.find_iter(&lib_file_contents_to_use) {
+    for line_match in line_regex.find_iter(&lib_contents) {
         if is_first {
             // If this is the first module to be added, meaning there's only 1
             // entry in the modules hashmap, then we don't have to search for
@@ -73,22 +62,14 @@ pub fn get_insert_location(
 ///
 /// `module_name` - The name of the module to add.
 /// `is_plugin` - Indicates whether the module is a plugin or not.
-/// `config` - Optionally, the config can be passed to be used.
-pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: Option<Config>) {
-    let config_to_use = match config {
-        Some(v) => v,
-        None => get_config_as_object(),
-    };
-    let lib_file_contents = get_lib_file_contents();
+/// `config` - The config to use.
+pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: Config) {
+    let mut lib_file_contents = get_lib_file_contents();
 
     // The position of where we should insert the `mod` statement for the
     // module.
-    let module_mod_insert_location = get_insert_location(
-        "mod.*;",
-        false,
-        Some(config_to_use),
-        Some(lib_file_contents),
-    );
+    let module_mod_insert_location =
+        get_insert_location("mod.*;", false, &config, &lib_file_contents);
 
     // Insert the new module's mod line after the last module's mod line.
     let mod_line = format!("mod {};", module_name);
@@ -100,19 +81,11 @@ pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: Option<Conf
     // If this is not the first module then we look for an existing module's
     // turbofish statement.
 
-    let handle_insert_location_first = get_insert_location(
-        "init.*\\{",
-        true,
-        Some(config_to_use),
-        Some(lib_file_contents),
-    );
+    let handle_insert_location_first =
+        get_insert_location("init.*\\{", true, &config, &lib_file_contents);
 
-    let handle_insert_location_normal = get_insert_location(
-        "handle.*;",
-        true,
-        Some(config_to_use),
-        Some(lib_file_contents),
-    );
+    let handle_insert_location_normal =
+        get_insert_location("handle.*;", true, &config, &lib_file_contents);
 
     // Insert the module or plugin turbofish at the start of the init function or
     // after the last module's turbofish.
@@ -129,7 +102,7 @@ pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: Option<Conf
         )
     };
 
-    let handle_insert_location_to_use = if config_to_use.modules.len() == 0 {
+    let handle_insert_location_to_use = if config.modules.len() == 0 {
         handle_insert_location_first
     } else {
         handle_insert_location_normal
