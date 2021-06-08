@@ -6,6 +6,7 @@ use std::fs::read_to_string;
 use convert_case::{Case, Casing};
 
 use crate::config_utils::{get_config_as_object, Config};
+use crate::file_utils::write_and_fmt;
 
 /// Returns the contents of the lib.rs file as a string.
 pub fn get_lib_file_contents() -> String {
@@ -109,4 +110,6 @@ pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: Config) {
     };
 
     lib_file_contents.insert_str(handle_insert_location_to_use.0, &handle_line);
+
+    write_and_fmt("src/lib.rs", lib_file_contents).expect("Unable to save or format lib");
 }
