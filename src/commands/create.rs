@@ -6,7 +6,8 @@ use std::process::exit;
 use convert_case::{Case, Casing};
 
 use crate::config_utils::{add_module_to_config, get_config_as_object, is_module_in_config};
-use crate::file_utils::{get_insert_location, write_and_fmt};
+use crate::file_utils::write_and_fmt;
+use crate::lib_utils::add_module_to_lib;
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
 use crate::path_utils::{exit_if_not_lib_dir, get_library_name_from_path};
 
@@ -20,29 +21,52 @@ pub fn create_module(name: &str, is_plugin: bool) {
     let current_dir = current_dir().expect("Unable to get current directory");
     let parent_dir = current_dir.parent().expect("Unable to get parent dir");
 
+    let module_name_snake_case = name.to_case(Case::Snake);
+
     // The mutable contents of the configuration file.
     let config = get_config_as_object();
 
     // The path to the Godot project.
-    let godot_path = parent_dir.join(&config.godot_project_name);
+    let path_to_godot_project = parent_dir.join(&config.godot_project_name);
 
     log_styled_message_to_console("Creating module", ConsoleColors::WHITE);
 
     exit_if_not_lib_dir();
 
-    check_if_module_already_exists(name, &config.modules);
+    if is_module_in_config(&module_name_snake_case, Some(config)) {
+        // If there's already a module with the same name in the config, then
+        // we exist early to avoid creating duplicates.
+        log_styled_message_to_console(
+            "A module with the same name already exists",
+            ConsoleColors::RED,
+        );
+    }
     create_initial_module_file(name, is_plugin);
 
-    add_module_to_lib(name, &config.modules, is_plugin);
+    add_module_to_lib(name, is_plugin, Some(config));
 
     // Create the module's corresponding gdns file.
     create_gdns_file_in_godot_project(name, &config.godot_project_name);
 
     if is_plugin {
-        create_plugin_structure_in_godot_project(name, godot_path)
+        create_plugin_structure_in_godot_project(name, path_to_godot_project)
     }
 
-    add_module_to_config(name);
+    // Create the path to the module in Godot, then turn it into a string so
+    // that it can be used in the config, and lastly save it to the config.
+    let path_to_module_in_godot = path_to_godot_project
+        .join("rust_modules")
+        .join(format!("{}.gdns", module_name_snake_case));
+    let path_to_module_in_godot_str = path_to_module_in_godot
+        .to_str()
+        .expect("Unable to create path to module in Godot")
+        .to_string();
+    add_module_to_config(
+        module_name_snake_case,
+        path_to_module_in_godot_str,
+        Some(config),
+    );
+
     log_styled_message_to_console("Module created", ConsoleColors::GREEN);
 }
 
@@ -72,26 +96,6 @@ fn create_plugin_structure_in_godot_project(module_name: &str, godot_project_pat
     );
 
     write(godot_plugin_cfg, plugin_cfg_with_script).expect("Unable to write plugin.cfg file");
-}
-
-/// Checks to see if the module with the provided name already exists and if it
-/// does, we exit early.
-///
-/// # Arguments
-///
-/// `module_name` - The name of the module to create.
-/// `config_modules` - The modules of the config file.
-fn check_if_module_already_exists(module_name: &str, config_modules: &Vec<String>) {
-    let module_name_pascal_case = &module_name.to_case(Case::Pascal);
-
-    let module_exists = is_module_in_config(&config_modules, &module_name_pascal_case);
-    if module_exists {
-        log_styled_message_to_console(
-            "A module with the same name already exists",
-            ConsoleColors::RED,
-        );
-        exit(1);
-    }
 }
 
 /// Creates the initial module file with the template.
@@ -148,55 +152,55 @@ fn create_gdns_file_in_godot_project(module_name: &str, godot_project_name: &Str
     write(gdns_path, gdns_with_module_name).expect("Unable to create module's gdns file");
 }
 
-/// Adds the module to the library's `lib.rs` file.
-///
-/// `module_name` - The name of the module.
-/// `config_modules` - The modules from the config file.
-/// `is_plugin` - Indicates whether the module is a plugin or not.
-fn add_module_to_lib(module_name: &str, config_modules: &Vec<String>, is_plugin: bool) {
-    let module_name_snake_case = &module_name.to_case(Case::Snake);
-    let module_name_pascal_case = &module_name.to_case(Case::Pascal);
+// /// Adds the module to the library's `lib.rs` file.
+// ///
+// /// `module_name` - The name of the module.
+// /// `config_modules` - The modules from the config file.
+// /// `is_plugin` - Indicates whether the module is a plugin or not.
+// fn add_module_to_lib(module_name: &str, config_modules: &Vec<String>, is_plugin: bool) {
+//     let module_name_snake_case = &module_name.to_case(Case::Snake);
+//     let module_name_pascal_case = &module_name.to_case(Case::Pascal);
 
-    let current_dir = current_dir().expect("Unable to get current directory");
+//     let current_dir = current_dir().expect("Unable to get current directory");
 
-    let mut lib_contents = read_to_string(current_dir.join("src").join("lib.rs"))
-        .expect("Unable to read src/lib.rs file");
+//     let mut lib_contents = read_to_string(current_dir.join("src").join("lib.rs"))
+//         .expect("Unable to read src/lib.rs file");
 
-    // Get the position of where to insert the mod statement for the module.
-    let mod_insert_location =
-        get_insert_location(&config_modules.clone(), &lib_contents, "mod.*;", false);
+//     // Get the position of where to insert the mod statement for the module.
+//     let mod_insert_location =
+//         get_insert_location(&config_modules.clone(), &lib_contents, "mod.*;", false);
 
-    // Insert the new module's mod line after the last module's mod line.
-    let mod_line = format!("mod {};", module_name_snake_case);
-    lib_contents.insert_str(mod_insert_location.0, &mod_line);
+//     // Insert the new module's mod line after the last module's mod line.
+//     let mod_line = format!("mod {};", module_name_snake_case);
+//     lib_contents.insert_str(mod_insert_location.0, &mod_line);
 
-    // Next we do the same thing for the handle turbofish statement for the
-    // module. However, this is different than the mod statement because if this
-    // is the first module created, then we need to look for the init function.
-    // If this is not the first module then we look for an existing module's
-    // turbofish statement.
-    let handle_insert_location = if config_modules.len() == 0 {
-        get_insert_location(&config_modules.clone(), &lib_contents, "init.*\\{", true)
-    } else {
-        get_insert_location(&config_modules.clone(), &lib_contents, "handle.*;", true)
-    };
+//     // Next we do the same thing for the handle turbofish statement for the
+//     // module. However, this is different than the mod statement because if this
+//     // is the first module created, then we need to look for the init function.
+//     // If this is not the first module then we look for an existing module's
+//     // turbofish statement.
+//     let handle_insert_location = if config_modules.len() == 0 {
+//         get_insert_location(&config_modules.clone(), &lib_contents, "init.*\\{", true)
+//     } else {
+//         get_insert_location(&config_modules.clone(), &lib_contents, "handle.*;", true)
+//     };
 
-    // Insert the module or plugin turbofish at the start of the init function or
-    // after the last module's turbofish.
-    let handle_line = if is_plugin {
-        format!(
-            "handle.add_tool_class::<{}::{}>();",
-            &module_name_snake_case, module_name_pascal_case
-        )
-    } else {
-        format!(
-            "handle.add_class::<{}::{}>();",
-            &module_name_snake_case, module_name_pascal_case
-        )
-    };
+//     // Insert the module or plugin turbofish at the start of the init function or
+//     // after the last module's turbofish.
+//     let handle_line = if is_plugin {
+//         format!(
+//             "handle.add_tool_class::<{}::{}>();",
+//             &module_name_snake_case, module_name_pascal_case
+//         )
+//     } else {
+//         format!(
+//             "handle.add_class::<{}::{}>();",
+//             &module_name_snake_case, module_name_pascal_case
+//         )
+//     };
 
-    lib_contents.insert_str(handle_insert_location.0, &handle_line);
+//     lib_contents.insert_str(handle_insert_location.0, &handle_line);
 
-    // Overwrite the current contents of lib.rs with its new contents.
-    write_and_fmt("src/lib.rs", lib_contents).expect("Unable to save or format");
-}
+//     // Overwrite the current contents of lib.rs with its new contents.
+//     write_and_fmt("src/lib.rs", lib_contents).expect("Unable to save or format");
+// }

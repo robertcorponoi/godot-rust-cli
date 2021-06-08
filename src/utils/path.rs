@@ -6,11 +6,12 @@ use std::{
     process::exit,
 };
 
+use crate::config_utils::get_path_to_config_file;
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
 
 /// Exits if the current path is not the path to the library's directory.
 pub fn exit_if_not_lib_dir() {
-    if !get_config_path().exists() {
+    if !get_path_to_config_file().exists() {
         log_styled_message_to_console(
             "This command must be used from the library directory",
             ConsoleColors::RED,
@@ -28,12 +29,6 @@ pub fn get_library_name_from_path() -> String {
         .expect("Unable to convert library name to str");
 
     return lib_name_str.to_string();
-}
-
-/// Returns the path to the configuration file.
-pub fn get_config_path() -> PathBuf {
-    let curr_dir = current_dir().expect("Unable to get current directory");
-    return Path::new(&curr_dir).join("godot-rust-cli.toml");
 }
 
 /// Returns the path to the dynamic libraries.

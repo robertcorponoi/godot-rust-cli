@@ -22,7 +22,7 @@ pub fn destroy_module(name: &str) {
 
     // check_if_module_already_exists_in_config(&config.modules, name);
     // remove_module_from_config(&mut config, name);
-    remove_module_from_config_if_exists(name);
+    remove_module_from_config_if_exists(name, Some(config));
 
     remove_module_gdns_from_godot(name, config.godot_project_name);
     remove_godot_plugin_dir_if_exists(name);

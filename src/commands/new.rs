@@ -44,7 +44,15 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, skip_build: bool) 
 
     create_library_cargo_toml();
 
-    create_initial_config(&godot_project_absolute_path);
+    // Get the name of the Godot project from its absolute path and use it to
+    // create the initial config.
+    let godot_project_name = godot_project_absolute_path
+        .file_name()
+        .unwrap()
+        .to_str()
+        .expect("Unable to convert Godot file name to str")
+        .to_string();
+    create_initial_config(godot_project_name);
     create_initial_lib_file();
 
     create_rust_modules_dir_in_godot(&godot_project_absolute_path);
