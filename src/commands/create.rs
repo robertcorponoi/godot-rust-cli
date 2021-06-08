@@ -1,7 +1,6 @@
 use std::env::current_dir;
-use std::fs::{read_to_string, write};
+use std::fs::write;
 use std::path::PathBuf;
-use std::process::exit;
 
 use convert_case::{Case, Casing};
 

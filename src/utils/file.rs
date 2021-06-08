@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::path::PathBuf;
 use std::{fs::write, io::Result, path::Path, process::Command};
 

@@ -5,7 +5,7 @@ use std::fs::read_to_string;
 
 use convert_case::{Case, Casing};
 
-use crate::config_utils::{get_config_as_object, Config};
+use crate::config_utils::Config;
 use crate::file_utils::write_and_fmt;
 
 /// Returns the contents of the lib.rs file as a string.
