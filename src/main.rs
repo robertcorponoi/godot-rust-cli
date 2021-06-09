@@ -17,6 +17,8 @@ mod config_utils;
 mod dynamic_library_utils;
 #[path = "./utils/file.rs"]
 mod file_utils;
+#[path = "./utils/lib.rs"]
+mod lib_utils;
 #[path = "./utils/log.rs"]
 mod log_utils;
 #[path = "./utils/path.rs"]

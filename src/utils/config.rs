@@ -1,109 +1,11 @@
-use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
+use std::env::current_dir;
 use std::fs::read_to_string;
 use std::fs::write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
-use crate::path_utils::get_config_path;
-
-/// Returns the contents of the configuration file as an object so that the
-/// key-value pairs can be operated on.
-pub fn get_config_as_object() -> Config {
-    let project_toml_string =
-        read_to_string(get_config_path()).expect("Unable to read godot-rust-cli.toml");
-
-    return toml::from_str(&project_toml_string).expect("Unable to parse godot-rust-cli.toml");
-}
-
-/// Creates the initial config file and writes it to the library.
-///
-/// `godot_project_absolute_path` - The absolute path to the Godot project.
-pub fn create_initial_config(godot_project_absolute_path: &PathBuf) {
-    let config = Config {
-        godot_project_name: godot_project_absolute_path
-            .file_name()
-            .unwrap()
-            .to_str()
-            .expect("Unable to convert Godot file name to str")
-            .to_string(),
-        modules: vec![],
-    };
-    let config_string = toml::to_string(&config).expect("Unable to convert config to string");
-    write("godot-rust-cli.toml", config_string).expect("Unable to create godot-rust-cli.toml file");
-}
-
-/// Writes the new contents to the config file.
-///
-/// # Arguments
-///
-/// `new_config_contents` - The new contents of the config file.
-pub fn set_config(new_config_contents: &mut Config) {
-    let project_toml_path = get_config_path();
-    let new_project_toml_string = toml::to_string(&new_config_contents)
-        .expect("Unable to convert godot-rust-cli.toml to string");
-
-    match write(project_toml_path, new_project_toml_string) {
-        Ok(_) => (),
-        Err(e) => {
-            log_styled_message_to_console(&e.to_string(), ConsoleColors::RED);
-            exit(1);
-        }
-    }
-}
-
-/// Adds a module to the config file.
-///
-/// # Arguments
-///
-/// `module_name` - The name of the module to add to the config file.
-pub fn add_module_to_config(module_name: &str) {
-    let mut config = get_config_as_object();
-    let module_name_pascal_case = &module_name.to_case(Case::Pascal);
-
-    config.modules.push(module_name_pascal_case.to_string());
-    set_config(&mut config);
-}
-
-/// Removes a module from the config file if it exists.
-///
-/// # Arguments
-///
-/// `module_name` - The name of the module to remove from the config file.
-pub fn remove_module_from_config_if_exists(module_name: &str) {
-    let mut config = get_config_as_object();
-    let module_name_pascal_case = module_name.to_case(Case::Pascal);
-    let module_exists_in_config = is_module_in_config(&config.modules, &module_name_pascal_case);
-
-    if !module_exists_in_config {
-        log_styled_message_to_console("The module to remove doesn't exist", ConsoleColors::RED);
-        exit(1);
-    }
-
-    let index_of_module_to_remove = config
-        .modules
-        .iter()
-        .position(|x| *&x == &module_name_pascal_case)
-        .expect("Unable get index of module to remove");
-    config.modules.remove(index_of_module_to_remove);
-
-    set_config(&mut config);
-}
-
-/// Indicates whether a module is present in the config or not.
-///
-/// # Arguments
-///
-/// `modules` - The modules from the config file.
-/// `module_name` - The module to check if exists or not.
-pub fn is_module_in_config(modules: &Vec<String>, module_name: &str) -> bool {
-    if modules.iter().any(|i| i == module_name) {
-        true
-    } else {
-        false
-    }
-}
 
 /// The stucture of the configuration file.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -112,4 +14,99 @@ pub struct Config {
     pub godot_project_name: String,
     /// Tracks the modules created and destroyed through the cli.
     pub modules: Vec<String>,
+}
+
+/// Returns the path to the configuration file.
+pub fn get_path_to_config_file() -> PathBuf {
+    let curr_dir = current_dir().expect("Unable to get current directory");
+    return Path::new(&curr_dir).join("godot-rust-cli.json");
+}
+
+/// Creates the initial configuration and saves it to a json file.
+///
+/// # Arguments
+///
+/// `godot_project_name` - The name of the Godot project.
+pub fn create_initial_config(godot_project_name: String) {
+    let config = Config {
+        godot_project_name: godot_project_name,
+        modules: vec![],
+    };
+    let config_as_json =
+        serde_json::to_string_pretty(&config).expect("Unable to create initial configuration");
+
+    write("godot-rust-cli.json", config_as_json).expect("Unable to create configuration file");
+}
+
+/// Returns the configuration as an object that can be operated on.
+pub fn get_config_as_object() -> Config {
+    let config_file_path = get_path_to_config_file();
+    let config_as_string =
+        read_to_string(config_file_path).expect("Unable to read configuration file");
+
+    return serde_json::from_str(&config_as_string).expect("Unable to parse configuration file");
+}
+
+/// Saves the configuration file to the library directory.
+///
+/// # Arguments
+///
+/// `config` - The configuration to save.
+pub fn save_config_to_file(config: &mut Config) {
+    let config_file_path = get_path_to_config_file();
+    let config_as_string =
+        serde_json::to_string_pretty(&config).expect("Unable to parse configuration");
+
+    match write(config_file_path, config_as_string) {
+        Ok(_) => (),
+        Err(e) => {
+            log_styled_message_to_console(&e.to_string(), ConsoleColors::RED);
+            exit(1);
+        }
+    }
+}
+
+/// Adds a module to the configuration file and saves it.
+///
+/// # Arguments
+///
+/// `module_name` - The name of the module to add to the configuration file.
+/// `config` - Can be passed if the config is already in memory.
+pub fn add_module_to_config(module_name: &str, config: &mut Config) {
+    config.modules.push(module_name.to_string());
+    save_config_to_file(config);
+}
+
+/// Indicates whether a module is present in the config or not.
+///
+/// # Arguments
+///
+/// `module_name` - The module to check if exists or not.
+/// `config` - The configuration file.
+pub fn is_module_in_config(module_name: &str, config: &mut Config) -> bool {
+    return config.modules.iter().any(|i| i == module_name);
+}
+
+/// Removes a module from the config file if it exists.
+///
+/// # Arguments
+///
+/// `module_name` - The name of the module to remove from the config file.
+/// `config` - The configuration file.
+pub fn remove_module_from_config_if_exists(module_name: &str, config: &mut Config) {
+    let module_exists_in_config = is_module_in_config(&module_name, config);
+
+    if !module_exists_in_config {
+        log_styled_message_to_console("The module to remove doesn't exist", ConsoleColors::RED);
+        exit(1);
+    }
+
+    let index = config
+        .modules
+        .iter()
+        .position(|x| *x == module_name)
+        .unwrap();
+    config.modules.remove(index);
+
+    save_config_to_file(config);
 }
