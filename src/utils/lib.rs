@@ -72,7 +72,8 @@ pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: &Config) {
         get_insert_location("mod.*;", false, &config, &lib_file_contents);
 
     // Insert the new module's mod line after the last module's mod line.
-    let mod_line = format!("mod {};", module_name);
+    let module_name_snake_case = &module_name.to_case(Case::Snake);
+    let mod_line = format!("mod {};", module_name_snake_case);
     lib_file_contents.insert_str(module_mod_insert_location.0, &mod_line);
 
     // Next we do the same thing for the handle turbofish statement for the
@@ -93,12 +94,12 @@ pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: &Config) {
     let handle_line = if is_plugin {
         format!(
             "handle.add_tool_class::<{}::{}>();",
-            &module_name, module_name_pascal_case
+            &module_name_snake_case, module_name_pascal_case
         )
     } else {
         format!(
             "handle.add_class::<{}::{}>();",
-            &module_name, module_name_pascal_case
+            &module_name_snake_case, module_name_pascal_case
         )
     };
 

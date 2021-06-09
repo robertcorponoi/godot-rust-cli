@@ -25,7 +25,8 @@ pub fn destroy_module(name: &str) {
     // Remove the module from the config if it exists. If it doesn't exist,
     // then an error is thrown and we return early since there is nothing to
     // remove.
-    remove_module_from_config_if_exists(name, &mut config);
+    let module_name_pascal_case = name.to_case(Case::Pascal);
+    remove_module_from_config_if_exists(&module_name_pascal_case, &mut config);
 
     // Remove the parts of the module from the Godot project. This includes the
     // gdns file for the module and the plugin directory if the module was a

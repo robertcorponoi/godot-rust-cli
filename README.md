@@ -90,7 +90,7 @@ To do this, we need to navigate to the Game directory and use:
 godot-rust-cli new platformer_modules platformer
 ```
 
-What this will do is create a new cargo library in the current directory with everything needed to create and build Rust modules. This also contains a `godot-rust-cli.toml` file used by Godot Rust CLI to keep track of what modules have been created and the name of the Godot project used when running commands.
+What this will do is create a new cargo library in the current directory with everything needed to create and build Rust modules. This also contains a `godot-rust-cli.json` file used by Godot Rust CLI to keep track of what modules have been created and the name of the Godot project used when running commands.
 
 Your directory structure should now look like:
 
@@ -282,7 +282,7 @@ godot-rust-cli plugin "Directory Browser"
 
 ## 0.1.x to 0.2.x
 
-To update your project to be compatible with 0.2.x versions from 0.1.x versions, you will need to rename your `project.toml` file to `godot-rust-cli.toml`.
+To update your project to be compatible with 0.2.x versions from 0.1.x versions, you will need to rename your `project.toml` file to `godot-rust-cli.json`.
 
 ## License
 

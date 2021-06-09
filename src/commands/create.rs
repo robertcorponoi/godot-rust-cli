@@ -60,7 +60,8 @@ pub fn create_module(name: &str, is_plugin: bool) {
     }
 
     // Adds the module to the `modules` section of the config and saves it.
-    add_module_to_config(name, &mut config);
+    let module_name_pascal_case = &name.to_case(Case::Pascal);
+    add_module_to_config(module_name_pascal_case, &mut config);
 
     log_styled_message_to_console("Module created", ConsoleColors::GREEN);
 }
