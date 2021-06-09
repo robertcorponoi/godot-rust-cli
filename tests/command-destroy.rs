@@ -191,3 +191,72 @@ fn destroy_create_five_modules_remove_two_modules() -> Result<(), Box<dyn Error>
 
     Ok(())
 }
+
+#[test]
+fn destroy_remove_moved_module() -> Result<(), Box<dyn Error>> {
+    init_test();
+
+    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
+    cmd.arg("new")
+        .arg("platformer_modules")
+        .arg("platformer")
+        .arg("--skip-build");
+
+    cmd.assert().success();
+
+    set_current_dir("platformer_modules").expect("Unable to change to library directory");
+    Command::new("cargo")
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Player")
+        .output()
+        .expect("Unable to execute cargo run");
+
+    Command::new("mkdir")
+        .arg("../platformer/player")
+        .output()
+        .expect("Unable to create player dir");
+
+    Command::new("mv")
+        .arg("../platformer/rust_modules/player.gdns")
+        .arg("../platformer/player/player.gdns")
+        .output()
+        .expect("Unable to move player script");
+
+    Command::new("cargo")
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Player")
+        .output()
+        .expect("Unable to execute cargo run");
+
+    let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
+    let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
+
+    let config = read_to_string("godot-rust-cli.json").expect("Unable to read config");
+    let v: Value = serde_json::from_str(&config)?;
+
+    let mod_file_path = Path::new("src/player.rs");
+
+    let player_gdns_file = Path::new("../platformer/rust_modules/player.gdns");
+    let player_gdns_file_new = Path::new("../platformer/player/player.gdns");
+
+    assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
+    assert_eq!(lib_file_split[1], "");
+    assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
+    assert_eq!(lib_file_split[3], "");
+    assert_eq!(lib_file_split[4], "godot_init!(init);");
+    assert_eq!(v["modules"], json!([]));
+
+    assert_eq!(mod_file_path.exists(), false);
+    assert_eq!(player_gdns_file.exists(), false);
+    assert_eq!(player_gdns_file_new.exists(), false);
+
+    set_current_dir("../").expect("Unable to change to parent directory");
+
+    cleanup_test_files();
+
+    Ok(())
+}
