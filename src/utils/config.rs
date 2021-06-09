@@ -1,6 +1,4 @@
-use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs::read_to_string;
 use std::fs::write;
@@ -15,7 +13,7 @@ pub struct Config {
     /// The name of the directory of the Godot project.
     pub godot_project_name: String,
     /// Tracks the modules created and destroyed through the cli.
-    pub modules: HashMap<String, String>,
+    pub modules: Vec<String>,
 }
 
 /// Returns the path to the configuration file.
@@ -32,7 +30,7 @@ pub fn get_path_to_config_file() -> PathBuf {
 pub fn create_initial_config(godot_project_name: String) {
     let config = Config {
         godot_project_name: godot_project_name,
-        modules: HashMap::new(),
+        modules: vec![],
     };
     let config_as_json =
         serde_json::to_string_pretty(&config).expect("Unable to create initial configuration");
@@ -73,22 +71,10 @@ pub fn save_config_to_file(config: &mut Config) {
 /// # Arguments
 ///
 /// `module_name` - The name of the module to add to the configuration file.
-/// `module_path_in_godot` - The path to the module in the Godot project.
 /// `config` - Can be passed if the config is already in memory.
-pub fn add_module_to_config(
-    module_name: String,
-    module_path_in_godot: String,
-    config: Option<Config>,
-) {
-    let mut config_to_use = match config {
-        Some(v) => v,
-        None => get_config_as_object(),
-    };
-    config_to_use
-        .modules
-        .insert(module_name, module_path_in_godot);
-
-    save_config_to_file(&mut config_to_use);
+pub fn add_module_to_config(module_name: &str, config: &mut Config) {
+    config.modules.push(module_name.to_string());
+    save_config_to_file(config);
 }
 
 /// Indicates whether a module is present in the config or not.
@@ -98,7 +84,7 @@ pub fn add_module_to_config(
 /// `module_name` - The module to check if exists or not.
 /// `config` - The configuration file.
 pub fn is_module_in_config(module_name: &str, config: &mut Config) -> bool {
-    return config.modules.contains_key(module_name);
+    return config.modules.iter().any(|i| i == module_name);
 }
 
 /// Removes a module from the config file if it exists.
@@ -108,14 +94,19 @@ pub fn is_module_in_config(module_name: &str, config: &mut Config) -> bool {
 /// `module_name` - The name of the module to remove from the config file.
 /// `config` - The configuration file.
 pub fn remove_module_from_config_if_exists(module_name: &str, config: &mut Config) {
-    let module_name_pascal_case = module_name.to_case(Case::Pascal);
-    let module_exists_in_config = is_module_in_config(&module_name_pascal_case, config);
+    let module_exists_in_config = is_module_in_config(&module_name, config);
 
     if !module_exists_in_config {
         log_styled_message_to_console("The module to remove doesn't exist", ConsoleColors::RED);
         exit(1);
     }
-    config.modules.remove(module_name);
+
+    let index = config
+        .modules
+        .iter()
+        .position(|x| *x == module_name)
+        .unwrap();
+    config.modules.remove(index);
 
     save_config_to_file(config);
 }

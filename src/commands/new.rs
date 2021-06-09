@@ -22,7 +22,8 @@ use crate::path_utils::get_absolute_path;
 pub fn create_library(name: &str, godot_project_dir: PathBuf, skip_build: bool) {
     log_styled_message_to_console("Creating library", ConsoleColors::WHITE);
 
-    // Normalize the library name so that we can be consistent.
+    // Normalize the library name so that we can be consistent. Everywhere we
+    // don't need to use pascal case we use snake case.
     let library_name_normalized = name.to_case(Case::Snake);
 
     // Get the absolute path to the library to use in file operations.
@@ -36,12 +37,15 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, skip_build: bool) 
     check_if_library_already_exists(library_absolute_path);
     check_if_godot_project_valid(&godot_project_absolute_path);
 
+    // Create the library as a cargo library.
     create_cargo_library(&library_name_normalized);
 
     // Change to the library directory so that we can work with the Cargo.toml
     // and set up our dependencies.
     set_current_dir(&library_name_normalized).expect("Unable to change to library directory");
 
+    // Set the Cargo.toml of the library to have the dependencies needed for a
+    // Godot Rust setup.
     create_library_cargo_toml();
 
     // Get the name of the Godot project from its absolute path and use it to
@@ -55,14 +59,25 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, skip_build: bool) 
     create_initial_config(godot_project_name);
     create_initial_lib_file();
 
+    // Create the rust modules directory for the modules in the Godot project.
+    // While modules don't have to be in this directory it is a good place to
+    // put modules on creation.
     create_rust_modules_dir_in_godot(&godot_project_absolute_path);
+
+    // Create the gdnlib that points to the dynamic library for the project.
     create_gdnlib_in_godot(&library_name_normalized, &godot_project_absolute_path);
 
     log_styled_message_to_console(
         "running initial build to generate Godot project structure",
         ConsoleColors::CYAN,
     );
+    // For testing we skip building the library so that tests won't take a
+    // long time to run. We already test building on its own so it isn't
+    // necessary to run here.
     if !skip_build {
+        // Otherwise, in normal environments, we want to run the initial build
+        // or else Godot will throw errors stating it can't find the dynamic
+        // library for the project.
         build_library();
     }
 

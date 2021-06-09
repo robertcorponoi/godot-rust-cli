@@ -15,10 +15,19 @@ use crate::time_utils::get_current_datetime_formatted;
 /// Builds the library to generate the dynamic libraries needed to run the
 /// modules in the Godot project.
 pub fn build_library() {
+    // Get the parent directory since it contains the library and the Godot
+    // project directories.
     let current_dir = std::env::current_dir().expect("Unable to get current directory");
+    let parent_dir = current_dir.parent().expect("Unable to get parent dir");
 
+    // The configuration object.
     let config = get_config_as_object();
+
+    // The name of the library.
     let lib_name = get_library_name_from_path();
+
+    // The path to the dynamic libraries in the library. This varies on Unix
+    // and Windows systems.
     let dynamic_libraries_path = get_dynamic_libraries_path();
 
     // Get the extention of the dynamic library generated on the OS that the
@@ -39,11 +48,10 @@ pub fn build_library() {
     );
     let dynamic_library_file = dynamic_libraries_path.join(dynamic_library_file_name);
 
-    let parent_dir = current_dir.parent().expect("Unable to get parent dir");
-
     log_version();
     log_styled_message_to_console("building...", ConsoleColors::CYAN);
 
+    // Run the actual `cargo build` command to build the library.
     run_cargo_build();
 
     // The path to where the dynamic libraries should be stored in the Godot

@@ -1,5 +1,4 @@
 use regex::Regex;
-use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs::read_to_string;
 
@@ -32,7 +31,7 @@ pub fn get_insert_location(
     is_first: bool,
     config: &Config,
     lib_contents: &String,
-) -> (usize, HashMap<String, String>) {
+) -> (usize, Vec<String>) {
     // Since we want to add our new module after all of the currently existing
     // ones, we need to keep updating the insert position to the end position of
     // the last module found.
@@ -64,7 +63,7 @@ pub fn get_insert_location(
 /// `module_name` - The name of the module to add.
 /// `is_plugin` - Indicates whether the module is a plugin or not.
 /// `config` - The config to use.
-pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: Config) {
+pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: &Config) {
     let mut lib_file_contents = get_lib_file_contents();
 
     // The position of where we should insert the `mod` statement for the
