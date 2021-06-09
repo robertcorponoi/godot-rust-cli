@@ -2,6 +2,7 @@ use std::fs::remove_file;
 use std::path::Path;
 
 use convert_case::{Case, Casing};
+use walkdir::WalkDir;
 
 use crate::config_utils::{get_config_as_object, remove_module_from_config_if_exists};
 use crate::file_utils::write_and_fmt;
@@ -132,15 +133,30 @@ fn remove_module_gdns_from_godot(name: &str, godot_project_name: String) {
     let parent_dir = current_dir
         .parent()
         .expect("Unable to get parent directory");
+    let godot_project_dir = parent_dir.join(&godot_project_name);
 
-    // Use the parent directory, the Godot project directory, and the
-    // `rust_modules` directory to get the path to the module's gdns file and
-    // remove it.
-    let gdns_path = parent_dir
-        .join(&godot_project_name)
-        .join("rust_modules")
-        .join(gdns_file_name);
-    remove_file(gdns_path).expect("Unable to remove module's gdns file");
+    // By default, modules are placed in the `rust_modules` directory inside of
+    // the Godot project. A user can move the module out of this directory but
+    // we want to check here first.
+    let possible_gdns_path = godot_project_dir.join("rust_modules").join(&gdns_file_name);
+    if possible_gdns_path.exists() {
+        remove_file(possible_gdns_path).expect("Unable to remove module's gdns file");
+    } else {
+        // Otherwise, if the module is not there, then we want to recursively
+        // iterate through the Godot project to find the module.
+        for entry in WalkDir::new(godot_project_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
+            let file_name = entry
+                .file_name()
+                .to_str()
+                .expect("Unable to get file name while finding module to remove in Godot project");
+            if file_name == gdns_file_name {
+                remove_file(entry.path()).expect("Unable to remove module's gdns file");
+            }
+        }
+    }
 }
 
 /// Removes the plugin directory that corresponds to the module.

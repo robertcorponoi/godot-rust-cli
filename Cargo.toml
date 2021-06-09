@@ -24,6 +24,7 @@ chrono = "0.4.19"
 dunce = "1.0.1"
 syn = { version = "1.0", features = ["full", "parsing", "printing", "visit", "visit-mut", "extra-traits"] }
 convert_case = "0.4.0"
+walkdir = "2"
 
 [dev-dependencies]
 assert_cmd = "1.0.2"
