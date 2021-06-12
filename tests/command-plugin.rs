@@ -39,7 +39,7 @@ fn plugin_create_library_structure() -> Result<(), Box<dyn Error>> {
     assert_eq!(config_json["name"], "Directory Browser");
     assert_eq!(config_json["godot_project_name"], "platformer");
     assert_eq!(config_json["is_plugin"], true);
-    assert_eq!(config_json["modules"], json!(["Directory Browser"]));
+    assert_eq!(config_json["modules"], json!([]));
 
     // 4. Assert that by default the plugin should have a module with the name of the plugin.
     let plugin_module_path = Path::new("src/directory_browser.rs");
@@ -189,10 +189,7 @@ fn plugin_create_module_library_structure() -> Result<(), Box<dyn Error>> {
     // 3: Assert that the config includes the new module.
     let config = read_to_string("godot-rust-cli.json")?;
     let config_json: Value = serde_json::from_str(&config)?;
-    assert_eq!(
-        config_json["modules"],
-        json!(["Directory Browser", "Explorer"])
-    );
+    assert_eq!(config_json["modules"], json!(["Explorer"]));
 
     // 4. Assert that the plugin module has a mod file.
     let module_path = Path::new("src/explorer.rs");
@@ -217,11 +214,11 @@ fn plugin_create_module_library_structure() -> Result<(), Box<dyn Error>> {
     assert_eq!(lib_file_split[1], "mod explorer;");
     assert_eq!(
         lib_file_split[5].trim(),
-        "handle.add_tool_class::<directory_browser::DirectoryBrowser>();"
+        "handle.add_tool_class::<explorer::Explorer>();"
     );
     assert_eq!(
         lib_file_split[6].trim(),
-        "handle.add_tool_class::<explorer::Explorer>();"
+        "handle.add_tool_class::<directory_browser::DirectoryBrowser>();"
     );
 
     set_current_dir("../")?;
@@ -327,10 +324,7 @@ fn plugin_destroy_module_library_structure() -> Result<(), Box<dyn Error>> {
     // 3: Assert that the config includes the new module.
     let config = read_to_string("godot-rust-cli.json")?;
     let config_json: Value = serde_json::from_str(&config)?;
-    assert_eq!(
-        config_json["modules"],
-        json!(["Directory Browser", "Explorer"])
-    );
+    assert_eq!(config_json["modules"], json!(["Explorer"]));
 
     // 4. Assert that the destroy module command was successful.
     let mut cmd_destroy = Command::new("cargo");
@@ -340,6 +334,11 @@ fn plugin_destroy_module_library_structure() -> Result<(), Box<dyn Error>> {
         .arg("destroy")
         .arg("Explorer");
     cmd_destroy.assert().success();
+
+    // 5: Assert that the config no longer includes the new module.
+    let config_updated = read_to_string("godot-rust-cli.json")?;
+    let config_updated_json: Value = serde_json::from_str(&config_updated)?;
+    assert_eq!(config_updated_json["modules"], json!([]));
 
     // 4. Assert that the plugin module no longer has a mod file.
     let module_path = Path::new("src/explorer.rs");
@@ -405,6 +404,41 @@ fn plugin_destroy_module_godot_structure() -> Result<(), Box<dyn Error>> {
     let module_gdns_path =
         Path::new("platformer/addons/directory_browser/rust_modules/explorer.gdns");
     assert_eq!(module_gdns_path.exists(), false);
+
+    cleanup_test_files();
+
+    Ok(())
+}
+
+/// Creates a plugin and then attempts to delete the root plugin module.
+#[test]
+fn plugin_destroy_root_module() -> Result<(), Box<dyn Error>> {
+    init_test();
+
+    // 1. Assert that the plugin command was successful.
+    let mut cmd_plugin = Command::new("cargo");
+    cmd_plugin
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
+        .arg("platformer")
+        .arg("--plugin")
+        .arg("--skip-build");
+    cmd_plugin.assert().success();
+
+    set_current_dir("directory_browser")?;
+
+    // 2. Assert the destroy module command was not successful.
+    let mut cmd_destroy = Command::new("cargo");
+    cmd_destroy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Directory Browser");
+    cmd_destroy.assert().failure();
+
+    set_current_dir("../")?;
 
     cleanup_test_files();
 

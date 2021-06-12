@@ -1,6 +1,7 @@
 use std::env::current_dir;
 use std::fs::{read_to_string, remove_file};
 use std::path::{Path, PathBuf};
+use std::process::exit;
 
 use convert_case::{Case, Casing};
 use walkdir::WalkDir;
