@@ -1,5 +1,6 @@
-use std::fs::remove_file;
-use std::path::Path;
+use std::env::current_dir;
+use std::fs::{read_to_string, remove_file};
+use std::path::{Path, PathBuf};
 
 use convert_case::{Case, Casing};
 use walkdir::WalkDir;
@@ -23,22 +24,40 @@ pub fn destroy_module(name: &str) {
     // The library configuration.
     let mut config = get_config_as_object();
 
+    // Normalize the name of the module to remove.
+    let module_name_snake_case = name.to_case(Case::Snake);
+    let module_name_pascal_case = name.to_case(Case::Pascal);
+
+    // Get the parent directory of the library since it's also the directory
+    // that contains the Godot project.
+    let current_dir = current_dir().expect("Unable to get current directory");
+    let parent_dir = current_dir
+        .parent()
+        .expect("Unable to get parent directory");
+    let godot_project_dir = parent_dir.join(&config.godot_project_name);
+
     // Remove the module from the config if it exists. If it doesn't exist,
     // then an error is thrown and we return early since there is nothing to
     // remove.
-    let module_name_pascal_case = name.to_case(Case::Pascal);
     remove_module_from_config_if_exists(&module_name_pascal_case, &mut config);
 
     // Remove the parts of the module from the Godot project. This includes the
     // gdns file for the module and the plugin directory if the module was a
     // plugin.
-    remove_module_gdns_from_godot(name, config.godot_project_name);
-    remove_godot_plugin_dir_if_exists(name);
+    remove_module_gdns_from_godot(
+        &module_name_snake_case,
+        &godot_project_dir,
+        config.is_plugin,
+    );
 
     // Remove the parts of the module from the library directory. This includes
     // the module's file and it's references from the `lib.rs` file.
-    remove_module_from_lib_file_and_save(name);
-    remove_module_from_library_dir(name);
+    remove_module_from_lib_file_and_save(
+        &module_name_snake_case,
+        &module_name_pascal_case,
+        &current_dir,
+    );
+    remove_module_from_library_dir(&module_name_snake_case);
 
     log_styled_message_to_console("Module destroyed", ConsoleColors::GREEN);
 }
@@ -48,17 +67,16 @@ pub fn destroy_module(name: &str) {
 ///
 /// # Arguments
 ///
-/// `name` - The name of the module to remove.
-fn remove_module_from_lib_file_and_save(name: &str) {
-    let current_dir = std::env::current_dir().expect("Unable to get current directory");
-
-    // We need the snake case and pascal case versions of the module name to
-    // find the module's references in the lib.rs file.
-    let module_name_snake_case = name.to_case(Case::Snake);
-    let module_name_pascal_case = name.to_case(Case::Pascal);
-
+/// `module_name_snake_case` - The snake case version of the module to destroy.
+/// `module_name_pascal_case` - The pascal case version of the module to destroy.
+/// `current_dir` - The current directory.
+fn remove_module_from_lib_file_and_save(
+    module_name_snake_case: &str,
+    module_name_pascal_case: &str,
+    current_dir: &PathBuf,
+) {
     // The contents of the `src/lib.rs` file.
-    let lib_contents = std::fs::read_to_string(current_dir.join("src").join("lib.rs"))
+    let lib_contents = read_to_string(current_dir.join("src").join("lib.rs"))
         .expect("Unable to read src/lib.rs file");
 
     // Create the mod and handle strings that we want to search for and remove
@@ -102,12 +120,8 @@ fn remove_module_from_lib_file_and_save(name: &str) {
 ///
 /// # Arguments
 ///
-/// `name` - The name of the module to remove.
-fn remove_module_from_library_dir(name: &str) {
-    // We need the snake case version of the module name to get the mod file
-    // name of the module.
-    let module_name_snake_case = name.to_case(Case::Snake);
-
+/// `module_name_snake_case` - The snake case version of the module to remove.
+fn remove_module_from_library_dir(module_name_snake_case: &str) {
     // Get the path to the module's mod.rs file and remove it.
     let module_file_name = format!("src/{}.rs", &module_name_snake_case);
     let module_path = Path::new(&module_file_name);
@@ -119,35 +133,45 @@ fn remove_module_from_library_dir(name: &str) {
 ///
 /// # Arguments
 ///
-/// `name` - The name of the module to remove.
-/// `godot_project_name` - The name of the Godot project from the config.
-fn remove_module_gdns_from_godot(name: &str, godot_project_name: String) {
-    // We need the snake case version of the module name to get the gdns file
-    // name of the module.
-    let module_name_snake_case = name.to_case(Case::Snake);
+/// `module_name_snake_case` - The snake case version of the module to remove.
+/// `godot_project_dir` - The path to the Godot project.
+fn remove_module_gdns_from_godot(
+    module_name_snake_case: &str,
+    godot_project_dir: &PathBuf,
+    is_plugin: bool,
+) {
     let gdns_file_name = format!("{}.gdns", &module_name_snake_case);
 
-    // Get the parent directory of the library since it's also the directory
-    // that contains the Godot project.
-    let current_dir = std::env::current_dir().expect("Unable to get current directory");
-    let parent_dir = current_dir
-        .parent()
-        .expect("Unable to get parent directory");
-    let godot_project_dir = parent_dir.join(&godot_project_name);
+    // The first place we should check for the module to remove is either the
+    // `rust_modules` folder in the plugin directory if it's a plugin or just
+    // the `rust_modules` folder in the root directory of the Godot project
+    // otherwise.
+    let possible_gdns_path = if is_plugin {
+        godot_project_dir
+            .join("addons")
+            .join(&module_name_snake_case)
+            .join("rust_modules")
+    } else {
+        godot_project_dir.join("rust_moudules")
+    };
 
-    // By default, modules are placed in the `rust_modules` directory inside of
-    // the Godot project. A user can move the module out of this directory but
-    // we want to check here first.
-    let possible_gdns_path = godot_project_dir.join("rust_modules").join(&gdns_file_name);
     if possible_gdns_path.exists() {
+        // If this path exists, then we can just remove the module.
         remove_file(possible_gdns_path).expect("Unable to remove module's gdns file");
     } else {
-        // Otherwise, if the module is not there, then we want to recursively
-        // iterate through the Godot project to find the module.
-        for entry in WalkDir::new(godot_project_dir)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
+        // Otherwise, we want to search a directory for the module. If the
+        // module is a plugin, we can limit our search to the plugin directory.
+        // Otherwise, we search the entire project since the user might have
+        // moved it around.
+        let search_dir = if is_plugin {
+            godot_project_dir
+                .join("addons")
+                .join(&module_name_snake_case)
+        } else {
+            godot_project_dir.to_owned()
+        };
+
+        for entry in WalkDir::new(search_dir).into_iter().filter_map(|e| e.ok()) {
             let file_name = entry
                 .file_name()
                 .to_str()
@@ -156,36 +180,5 @@ fn remove_module_gdns_from_godot(name: &str, godot_project_name: String) {
                 remove_file(entry.path()).expect("Unable to remove module's gdns file");
             }
         }
-    }
-}
-
-/// Removes the plugin directory that corresponds to the module.
-///
-/// # Arguments
-///
-/// `name` - The name of the module to remove.
-fn remove_godot_plugin_dir_if_exists(name: &str) {
-    // We need the snake case version of the module name to get the name of
-    // the plugin dir of the module.
-    let module_name_snake_case = name.to_case(Case::Snake);
-
-    // Get the parent directory since it contains the Godot project directory
-    // which has the plugin directory for the module.
-    let current_dir = std::env::current_dir().expect("Unable to get current directory");
-    let parent_dir = current_dir
-        .parent()
-        .expect("Unable to get parent directory");
-
-    // Create the path to the plugin directory.
-    let godot_project_name = get_config_as_object().godot_project_name;
-    let plugin_path = parent_dir
-        .join(&godot_project_name)
-        .join("addons")
-        .join(&module_name_snake_case);
-
-    if plugin_path.exists() {
-        // Remove the plugin if it actually exists in the Godot project.
-        std::fs::remove_dir_all(plugin_path)
-            .expect("Unable to remove plugin directory from Godot project")
     }
 }

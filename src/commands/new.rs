@@ -1,12 +1,12 @@
 use std::env::set_current_dir;
-use std::fs::{read_to_string, write};
+use std::fs::{create_dir_all, read_to_string, write};
 use std::path::PathBuf;
 use std::process::{exit, Command};
 
 use convert_case::{Case, Casing};
 
 use crate::command_build::build_library;
-use crate::config_utils::create_initial_config;
+use crate::config_utils::{create_initial_config, Config};
 use crate::definitions::CargoToml;
 use crate::file_utils::write_and_fmt;
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
@@ -17,9 +17,10 @@ use crate::path_utils::get_absolute_path;
 /// # Arguments
 ///
 /// `name` - The name of the library.
-/// `godot_project_dir` - The relative path to the directory of the Godot project that this library of modules is for.
+/// `godot_project_dir` - The relative path to the directory of the Godot project the plugin or modules are for.
+/// `plugin` - Indicates whether the library is for a plugin or not.
 /// `skip_build` - Indicates whether the build should be skipped after creating the library or not.
-pub fn create_library(name: &str, godot_project_dir: PathBuf, skip_build: bool) {
+pub fn create_library(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_build: bool) {
     log_styled_message_to_console("Creating library", ConsoleColors::WHITE);
 
     // Normalize the library name so that we can be consistent. Everywhere we
@@ -56,21 +57,33 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, skip_build: bool) 
         .to_str()
         .expect("Unable to convert Godot file name to str")
         .to_string();
-    create_initial_config(godot_project_name);
+    let config = create_initial_config(name.to_owned(), godot_project_name, plugin);
     create_initial_lib_file();
-
-    // Create the rust modules directory for the modules in the Godot project.
-    // While modules don't have to be in this directory it is a good place to
-    // put modules on creation.
-    create_rust_modules_dir_in_godot(&godot_project_absolute_path);
-
-    // Create the gdnlib that points to the dynamic library for the project.
-    create_gdnlib_in_godot(&library_name_normalized, &godot_project_absolute_path);
 
     log_styled_message_to_console(
         "running initial build to generate Godot project structure",
         ConsoleColors::CYAN,
     );
+
+    if plugin {
+        // If the library is for a plugin, then we create the plugin structure
+        // within the Godot project.
+        create_plugin_structure_in_godot(&name, &godot_project_absolute_path);
+    }
+
+    create_rust_modules_dir_in_godot(
+        &library_name_normalized,
+        &godot_project_absolute_path,
+        &config,
+    );
+
+    // Create the gdnlib that points to the dynamic library for the project.
+    create_gdnlib_in_godot(
+        &library_name_normalized,
+        &godot_project_absolute_path,
+        &config,
+    );
+
     // For testing we skip building the library so that tests won't take a
     // long time to run. We already test building on its own so it isn't
     // necessary to run here.
@@ -159,9 +172,24 @@ fn create_cargo_library(library_name: &String) {
 
 /// Creates the `rust_modules` directory within the Godot project.
 ///
+/// `library_name_snake_case` - The snake case version of the library name.
 /// `godot_project_path` - The path to the Godot project.
-fn create_rust_modules_dir_in_godot(godot_project_path: &PathBuf) {
-    match std::fs::create_dir_all(&godot_project_path.join("rust_modules")) {
+/// `config` - The config.
+fn create_rust_modules_dir_in_godot(
+    library_name_snake_case: &str,
+    godot_project_path: &PathBuf,
+    config: &Config,
+) {
+    let rust_modules_path = if config.is_plugin {
+        godot_project_path
+            .join("addons")
+            .join(&library_name_snake_case)
+            .join("rust_modules")
+    } else {
+        godot_project_path.join("rust_modules")
+    };
+
+    match create_dir_all(&rust_modules_path) {
         Ok(_) => (),
         Err(e) => {
             // If there was a problem creating the directory then we print the error
@@ -178,21 +206,64 @@ fn create_rust_modules_dir_in_godot(godot_project_path: &PathBuf) {
 ///
 /// `library_name` - The name of the library to create.
 /// `godot_project_dir` - The absolute path to the Godot project.
-fn create_gdnlib_in_godot(library_name: &str, godot_absolute_path: &PathBuf) {
+/// `config` - The library's config.
+fn create_gdnlib_in_godot(library_name: &str, godot_absolute_path: &PathBuf, config: &Config) {
     let gdnlib_template = include_str!("../templates/gdnlib.txt");
 
-    let gdnlib_with_library_name = gdnlib_template.replace("LIBRARY_NAME", &library_name);
+    let dynamic_library_path = if config.is_plugin {
+        format!("addons/{}/bin", &config.name.to_case(Case::Snake))
+    } else {
+        "bin".to_owned()
+    };
+    let gdnlib_with_library_path = gdnlib_template.replace("LIBRARY_PATH", &dynamic_library_path);
+
+    let gdnlib_with_library_name = gdnlib_with_library_path.replace("LIBRARY_NAME", &library_name);
     let gdnlib_filename = format!("{}.gdnlib", &library_name);
 
-    write(
-        &godot_absolute_path.join(gdnlib_filename),
-        gdnlib_with_library_name,
-    )
-    .expect("Unable to create gdnlib file");
+    let gdnlib_path = if config.is_plugin {
+        godot_absolute_path
+            .join("addons")
+            .join(&config.name.to_case(Case::Snake))
+            .join(&gdnlib_filename)
+    } else {
+        godot_absolute_path.join(&gdnlib_filename)
+    };
+
+    write(&gdnlib_path, gdnlib_with_library_name).expect("Unable to create gdnlib file");
 }
 
 /// Creates the initial `lib.rs` file in the library directory.
 fn create_initial_lib_file() {
     let lib_template = include_str!("../templates/lib.rs");
     write_and_fmt("src/lib.rs", lib_template).expect("Unable to create the initial lib.rs file");
+}
+
+/// Creates the plugin structure within the Godot project.
+///
+/// `plugin_name` - The name of the plugin.
+/// `godot_project_path` - The path to the Godot project.
+/// `normalized_module_name` - The normalized name of the plugin module to create.
+fn create_plugin_structure_in_godot(plugin_name: &str, godot_project_path: &PathBuf) {
+    let module_name_snake_case = &plugin_name.to_case(Case::Snake);
+
+    let godot_plugin_dir = godot_project_path
+        .join("addons")
+        .join(&module_name_snake_case);
+    let godot_plugin_cfg = godot_plugin_dir.join("plugin.cfg");
+    create_dir_all(&godot_plugin_dir)
+        .expect("Unable to create plugin directory structure in Godot project");
+
+    Command::new("godot-rust-cli")
+        .arg("create")
+        .arg(&plugin_name)
+        .status()
+        .expect("Unable to create plugin module");
+
+    let plugin_cfg = include_str!("../templates/plugin-cfg.txt");
+    let plugin_cfg_with_name = plugin_cfg.replace("PLUGIN_NAME", &plugin_name);
+    let plugin_cfg_with_script = plugin_cfg_with_name.replace(
+        "PLUGIN_GDNS_LOCATION",
+        &format!("{}.gdns", &module_name_snake_case),
+    );
+    write(godot_plugin_cfg, plugin_cfg_with_script).expect("Unable to write plugin.cfg file");
 }

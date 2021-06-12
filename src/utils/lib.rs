@@ -61,9 +61,8 @@ pub fn get_insert_location(
 /// Adds a module to the lib.rs file.
 ///
 /// `module_name` - The name of the module to add.
-/// `is_plugin` - Indicates whether the module is a plugin or not.
 /// `config` - The config to use.
-pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: &Config) {
+pub fn add_module_to_lib(module_name: &str, config: &Config) {
     let mut lib_file_contents = get_lib_file_contents();
 
     // The position of where we should insert the `mod` statement for the
@@ -91,7 +90,7 @@ pub fn add_module_to_lib(module_name: &str, is_plugin: bool, config: &Config) {
     // Insert the module or plugin turbofish at the start of the init function or
     // after the last module's turbofish.
     let module_name_pascal_case = &module_name.to_case(Case::Pascal);
-    let handle_line = if is_plugin {
+    let handle_line = if config.is_plugin {
         format!(
             "handle.add_tool_class::<{}::{}>();",
             &module_name_snake_case, module_name_pascal_case

@@ -10,8 +10,12 @@ use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
 /// The stucture of the configuration file.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
+    /// The name of the library.
+    pub name: String,
     /// The name of the directory of the Godot project.
     pub godot_project_name: String,
+    /// Indicates whether the library is for a plugin or not.
+    pub is_plugin: bool,
     /// Tracks the modules created and destroyed through the cli.
     pub modules: Vec<String>,
 }
@@ -26,16 +30,22 @@ pub fn get_path_to_config_file() -> PathBuf {
 ///
 /// # Arguments
 ///
+/// `library_name` - The name of the library.
 /// `godot_project_name` - The name of the Godot project.
-pub fn create_initial_config(godot_project_name: String) {
+/// `is_library` - Indicates whether the library is for a plugin or not.
+pub fn create_initial_config(library_name: String, godot_project_name: String, is_plugin: bool) -> Config {
     let config = Config {
+        name: library_name,
         godot_project_name: godot_project_name,
+        is_plugin: is_plugin,
         modules: vec![],
     };
     let config_as_json =
         serde_json::to_string_pretty(&config).expect("Unable to create initial configuration");
 
     write("godot-rust-cli.json", config_as_json).expect("Unable to create configuration file");
+
+    return config;
 }
 
 /// Returns the configuration as an object that can be operated on.
