@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use convert_case::{Case, Casing};
 use walkdir::WalkDir;
 
-use crate::config_utils::{get_config_as_object, remove_module_from_config_if_exists};
+use crate::config_utils::{get_config_as_object, remove_module_from_config_if_exists, Config};
 use crate::file_utils::write_and_fmt;
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
 use crate::path_utils::exit_if_not_lib_dir;
@@ -44,11 +44,7 @@ pub fn destroy_module(name: &str) {
     // Remove the parts of the module from the Godot project. This includes the
     // gdns file for the module and the plugin directory if the module was a
     // plugin.
-    remove_module_gdns_from_godot(
-        &module_name_snake_case,
-        &godot_project_dir,
-        config.is_plugin,
-    );
+    remove_module_gdns_from_godot(&module_name_snake_case, &godot_project_dir, &config);
 
     // Remove the parts of the module from the library directory. This includes
     // the module's file and it's references from the `lib.rs` file.
@@ -135,24 +131,27 @@ fn remove_module_from_library_dir(module_name_snake_case: &str) {
 ///
 /// `module_name_snake_case` - The snake case version of the module to remove.
 /// `godot_project_dir` - The path to the Godot project.
+/// `config` - The library's config.
 fn remove_module_gdns_from_godot(
     module_name_snake_case: &str,
     godot_project_dir: &PathBuf,
-    is_plugin: bool,
+    config: &Config,
 ) {
+    let library_name_snake_case = &config.name.to_case(Case::Snake);
     let gdns_file_name = format!("{}.gdns", &module_name_snake_case);
 
     // The first place we should check for the module to remove is either the
     // `rust_modules` folder in the plugin directory if it's a plugin or just
     // the `rust_modules` folder in the root directory of the Godot project
     // otherwise.
-    let possible_gdns_path = if is_plugin {
+    let possible_gdns_path = if config.is_plugin {
         godot_project_dir
             .join("addons")
-            .join(&module_name_snake_case)
+            .join(&library_name_snake_case)
             .join("rust_modules")
+            .join(&gdns_file_name)
     } else {
-        godot_project_dir.join("rust_moudules")
+        godot_project_dir.join("rust_modules").join(&gdns_file_name)
     };
 
     if possible_gdns_path.exists() {
@@ -163,10 +162,10 @@ fn remove_module_gdns_from_godot(
         // module is a plugin, we can limit our search to the plugin directory.
         // Otherwise, we search the entire project since the user might have
         // moved it around.
-        let search_dir = if is_plugin {
+        let search_dir = if config.is_plugin {
             godot_project_dir
                 .join("addons")
-                .join(&module_name_snake_case)
+                .join(&library_name_snake_case)
         } else {
             godot_project_dir.to_owned()
         };

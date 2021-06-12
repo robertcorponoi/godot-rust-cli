@@ -121,7 +121,7 @@ fn create_gdns_file_in_godot(
     // Create the path to the gdns file in the Godot project by joining the
     // path to the Godot project with the default `rust_modules` directory.
     let gdns_file_name = format!("{}.gdns", &module_name_snake_case);
-    let library_name_snake_dir = &config.name.to_case(Case::Snake);
+    let library_name_snake_case = &config.name.to_case(Case::Snake);
 
     let gdns_path: PathBuf = if config.is_plugin {
         // Since the library is a plugin, we check to first check whether the
@@ -130,14 +130,14 @@ fn create_gdns_file_in_godot(
         // root of the plugin directory.
         let plugin_rust_modules_dir = godot_project_dir
             .join("addons")
-            .join(&library_name_snake_dir)
+            .join(&library_name_snake_case)
             .join("rust_modules");
         if plugin_rust_modules_dir.exists() {
             plugin_rust_modules_dir.join(gdns_file_name)
         } else {
             godot_project_dir
                 .join("addons")
-                .join(&library_name_snake_dir)
+                .join(&library_name_snake_case)
                 .join(gdns_file_name)
         }
     } else {
@@ -147,10 +147,10 @@ fn create_gdns_file_in_godot(
     let gdns_library_path = if config.is_plugin {
         format!(
             "addons/{}/{}",
-            &library_name_snake_dir, &library_name_snake_dir
+            &library_name_snake_case, &library_name_snake_case
         )
     } else {
-        format!("{}", &library_name_snake_dir)
+        format!("{}", &library_name_snake_case)
     };
 
     let gdns_template = include_str!("../templates/gdns.txt");
