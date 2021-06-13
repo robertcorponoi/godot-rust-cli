@@ -43,7 +43,10 @@ fn new_create_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 5. Assert that the plugin's initial module is added to the lib file.
     let lib_file_string = read_to_string(lib_file_path)?;
-    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
     assert_eq!(lib_file_split[1], "");
     assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
@@ -52,7 +55,10 @@ fn new_create_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 6. Assert that the Cargo.toml file of the library is what we expect.
     let cargo_toml_string = read_to_string("platformer_modules/Cargo.toml")?;
-    let cargo_toml_split = cargo_toml_string.split("\n").collect::<Vec<&str>>();
+    let cargo_toml_split = cargo_toml_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(cargo_toml_split[0], "[package]");
     assert_eq!(cargo_toml_split[1], "name = \"platformer_modules\"");
     assert_eq!(cargo_toml_split[2], "version = \"0.1.0\"");
@@ -102,7 +108,10 @@ fn new_create_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 5. Assert that the contents of the gdnlib file are what we expect.
     let gdnlib_string = read_to_string(gdnlib_path)?;
-    let gdnlib_split = gdnlib_string.split("\n").collect::<Vec<&str>>();
+    let gdnlib_split = gdnlib_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(
         gdnlib_split[9],
         "OSX.64=\"res://bin/libplatformer_modules.dylib\""

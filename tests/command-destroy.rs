@@ -53,7 +53,10 @@ fn destroy_module_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 5. Assert that the module was removed from the lib file.
     let lib_file_string = read_to_string("src/lib.rs")?;
-    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
     assert_eq!(lib_file_split[1], "");
     assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
@@ -206,7 +209,10 @@ fn destroy_modules_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 6. Assert that the modules were removed from the lib file.
     let lib_file_string = read_to_string("src/lib.rs")?;
-    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(lib_file_split[0], "mod environment;");
     assert_eq!(lib_file_split[1], "mod level;");
     assert_eq!(lib_file_split[2], "mod player;");

@@ -44,7 +44,10 @@ fn create_module_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 4. Assert that the module contents are what we expect.
     let module_mod_string = read_to_string(module_mod_path)?;
-    let module_mod_split = module_mod_string.split("\n").collect::<Vec<&str>>();
+    let module_mod_split = module_mod_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(module_mod_split[0], "use gdnative::api::Node2D;");
     assert_eq!(module_mod_split[5], "pub struct Player;");
     assert_eq!(module_mod_split[8], "impl Player {");
@@ -52,7 +55,10 @@ fn create_module_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 4. Assert that the module was added to the lib file.
     let lib_file_string = read_to_string("src/lib.rs")?;
-    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(lib_file_split[0], "mod player;");
     assert_eq!(
         lib_file_split[4].trim(),
@@ -108,7 +114,10 @@ fn create_module_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 4. Assert that the gnds file has the correct contents.
     let module_gdns_string = read_to_string(module_gdns_path)?;
-    let module_gdns_split = module_gdns_string.split("\n").collect::<Vec<&str>>();
+    let module_gdns_split = module_gdns_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(
         module_gdns_split[2],
         "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
@@ -175,7 +184,10 @@ fn create_multiple_modules_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 4. Assert that the modules were added to the lib file.
     let lib_file_string = read_to_string("src/lib.rs")?;
-    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(lib_file_split[0], "mod enemy;");
     assert_eq!(lib_file_split[1], "mod level;");
     assert_eq!(lib_file_split[2], "mod player;");
@@ -262,7 +274,8 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
     let player_module_gdns_string = read_to_string(player_module_gdns_path)?;
     let player_module_gdns_split = player_module_gdns_string
         .split("\n")
-        .collect::<Vec<&str>>();
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(
         player_module_gdns_split[2],
         "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
@@ -273,7 +286,8 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
     let enemy_module_gdns_string = read_to_string(enemy_module_gdns_path)?;
     let enemy_module_gdns_split = enemy_module_gdns_string
         .split("\n")
-        .collect::<Vec<&str>>();
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(
         enemy_module_gdns_split[2],
         "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
@@ -284,7 +298,8 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
     let level_module_gdns_string = read_to_string(level_module_gdns_path)?;
     let level_module_gdns_split = level_module_gdns_string
         .split("\n")
-        .collect::<Vec<&str>>();
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
     assert_eq!(
         level_module_gdns_split[2],
         "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
