@@ -23,6 +23,10 @@ pub const BUILD_FILE_PREFIX: &str = "";
 
 /// If the tests are being run on linux, then the build file prefix is lib.
 #[cfg(target_os = "linux")]
+#[allow(dead_code)]
+pub const BUILD_FILE_PREFIX: &str = "lib";
+
+/// If the tests are being run on macos, then the build file prefix is lib.
 #[cfg(target_os = "macos")]
 #[allow(dead_code)]
 pub const BUILD_FILE_PREFIX: &str = "lib";
