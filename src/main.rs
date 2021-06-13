@@ -48,6 +48,10 @@ enum GodotRustCli {
         #[structopt(parse(from_os_str))]
         godot_project_dir: PathBuf,
 
+        /// Indicates whether the library is for a plugin or not.
+        #[structopt(long, short)]
+        plugin: bool,
+
         /// Indicates whether automatic build of the library after creation
         /// should be skipped or not. The build is not necessary but ensures
         /// that there's no missing dynamic library error in Godot.
@@ -85,15 +89,6 @@ enum GodotRustCli {
         #[structopt(long, short)]
         watch: bool,
     },
-
-    /// Creates a plugin in the library and Godot project.
-    ///
-    /// Usage: godot-rust-cli plugin "Toml Parser"
-    Plugin {
-        /// The name of the plugin.
-        #[structopt()]
-        name: String,
-    },
 }
 
 fn main() {
@@ -101,9 +96,10 @@ fn main() {
         GodotRustCli::New {
             name,
             godot_project_dir,
+            plugin,
             skip_build,
-        } => command_new::create_library(&name, godot_project_dir, skip_build),
-        GodotRustCli::Create { name } => command_create::create_module(&name, false),
+        } => command_new::create_library(&name, godot_project_dir, plugin, skip_build),
+        GodotRustCli::Create { name } => command_create::create_module(&name),
         GodotRustCli::Destroy { name } => command_destroy::destroy_module(&name),
         GodotRustCli::Build { watch } => {
             if watch {
@@ -112,6 +108,5 @@ fn main() {
                 command_build::build_library();
             }
         }
-        GodotRustCli::Plugin { name } => command_create::create_module(&name, true),
     }
 }

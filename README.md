@@ -10,10 +10,13 @@
 ![Crates.io](https://img.shields.io/crates/v/godot-rust-cli)
 ![Crates.io](https://img.shields.io/crates/d/godot-rust-cli)
 ![Crates.io](https://img.shields.io/crates/l/godot-rust-cli)
+[![Discord](https://img.shields.io/discord/853728834519040030.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/kr9EkBp7)
 
 ## Documentation
 
-Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the GitHub repo.
+Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the GitHub repo or feel free to ask questions in the [Discord](https://discord.gg/kr9EkBp7).
+
+Also keep in mind that the main branch will usually be ahead of the version on [crates.io](https://crates.io/crates/godot-rust-cli).
 
 **Table of Contents**
 
@@ -24,12 +27,13 @@ Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bug
   - [Step By Step](#step-by-step)
 - [API](#api)
   - [new](#new)
+    - [plugin](#plugin)
   - [create](#create)
   - [destroy](#destroy)
   - [build](#build)
-  - [plugin](#plugin)
 - [Compatibility](#compatibility)
 - [Updating](#updating)
+- [Questions](#questions)
 - [License](#license)
 
 ## Introduction
@@ -169,6 +173,20 @@ godot-rust-cli new platformer_modules platformer
 
 **Note:** To make Godot Rust CLI easy to use when importing other people's projects, the library and Godot project must have the same parent directory. For example, if your Godot project is named `platformer` and it lives under a directory called `Games`, then the library of Rust modules must also be created in the `Games` directory.
 
+### plugin
+
+The `new` command can also be used to create a plugin. A plugin is itself a library and should only contain modules necessary for that plugin. A plugin has the same arguments as `new`, since it is an extension of the `new` command but you have to pass `plugin` as a flag.
+
+**Example:**
+
+Creating a library for a plugin named "Directory Browser" for a Godot project named `platformer`.
+
+```sh
+godot-rust-cli new "Directory Browser" platformer --plugin
+```
+
+**Note:** The plugin doesn't have to be tied to a Godot project outside of just using it for development/testing. All of the plugin's files are contained with the plugin itself and it can be moved around after development on it is finished.
+
 ### create
 
 Creates a Rust module and it's corresponding file structure in the library and the Godot project.
@@ -198,6 +216,8 @@ godot-rust-cli create MainScene
 ```
 
 **Note:** The name of the module to create should be PascalCase and Godot Rust CLI will attempt to normalize it for you. However, in cases where the module name is multiple words like `MainScene`, and if you use `mainscene`, then it will not be normalized correctly so you should try to use the correct casing whenever possible.
+
+**Note:** All modules will be placed in a `rust_modules` directory in the Godot project by default but you can move it wherever you need it.
 
 ### destroy
 
@@ -249,28 +269,6 @@ Building the library and watching for changes to the library to rebuild automati
 godot-rust-cli build --watch
 ```
 
-### plugin
-
-Creates a module meant to be used as a plugin. This works about the same as `create` but this also creates the `addons` structure in the Godot project that Godot requires from plugins.
-
-**Usage:**
-
-```sh
-godot-rust-cli plugin <plugin_name>
-```
-
-where:
-
-- `plugin_name` is the name of the plugin. This should be the user friendly name of the plugin and Godot Rust CLI will handle normalizing it, like the example below.
-
-**Examples:**
-
-Creating a plugin named Directory Browser:
-
-```sh
-godot-rust-cli plugin "Directory Browser"
-```
-
 # Compatibility
 
 | Godot Rust Version | Godot Rust CLI Version |
@@ -282,7 +280,19 @@ godot-rust-cli plugin "Directory Browser"
 
 ## 0.1.x to 0.2.x
 
-To update your project to be compatible with 0.2.x versions from 0.1.x versions, you will need to rename your `project.toml` file to `godot-rust-cli.json`.
+To update your project to be compatible with 0.2.x versions from 0.1.x versions, you will need to rename your `project.toml` file to `godot-rust-cli.toml`.
+
+## 0.2.x to 0.3.x
+
+Libraries have switched from a toml config to a json config so if you want to update your library it is recommended to check out what the json config looks like and update your local one to match. 
+
+A tool is in development to make upgrading between major changes easier. If you need help, questions and concerns are always welcome on [Discord](https://discord.gg/kr9EkBp7).
+
+If you have been developing a plugin, there is unfortunately no way to upgrade without creating a new project as there was a major overhaul to plugin creation.
+
+# Questions
+
+Check out the [Discord](https://discord.gg/kr9EkBp7) to ask any questions or concerns about the cli or Godot + Rust in general.
 
 ## License
 

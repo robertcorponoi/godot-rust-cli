@@ -7,9 +7,9 @@ reloadable=true
 
 [entry]
 
-OSX.64="res://bin/libLIBRARY_NAME.dylib"
-Windows.64="res://bin/LIBRARY_NAME.dll"
-X11.64="res://bin/libLIBRARY_NAME.so"
+OSX.64="res://LIBRARY_PATH/libLIBRARY_NAME.dylib"
+Windows.64="res://LIBRARY_PATH/LIBRARY_NAME.dll"
+X11.64="res://LIBRARY_PATH/libLIBRARY_NAME.so"
 
 [dependencies]
 

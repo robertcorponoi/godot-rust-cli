@@ -8,434 +8,464 @@ use std::path::Path;
 use std::process::Command;
 
 mod test_utilities;
-use test_utilities::{cleanup_test_files, init_test};
+use test_utilities::{cleanup_test_files, init_test, BUILD_FILE_PREFIX, BUILD_FILE_TYPE};
 
+/// Creates a plugin and checks that all of the files in the library exist and
+/// that their values are what they should be.
 #[test]
-fn plugin_add_name_to_library_project_toml() -> Result<(), Box<dyn Error>> {
+fn plugin_create_library_structure() -> Result<(), Box<dyn Error>> {
     init_test();
 
-    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-    cmd.arg("new")
-        .arg("platformer_modules")
+    // 1. Assert that the plugin command was successful.
+    let mut cmd = Command::new("cargo");
+    cmd.arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
         .arg("platformer")
+        .arg("--plugin")
         .arg("--skip-build");
-
     cmd.assert().success();
 
-    set_current_dir("platformer_modules").expect("Unable to change to library directory");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
+    // 2. Assert that the library directory for the plugin was created.
+    let plugin_library_dir = Path::new("directory_browser");
+    assert_eq!(plugin_library_dir.exists(), true);
 
-    let config = read_to_string("godot-rust-cli.json").expect("Unable to read config");
-    let v: Value = serde_json::from_str(&config)?;
+    set_current_dir(plugin_library_dir)?;
 
-    assert_eq!(v["godot_project_name"], "platformer");
-    assert_eq!(v["modules"][0], "DirectoryBrowser");
+    // 3: Assert that the config is what it should be.
+    let config = read_to_string("godot-rust-cli.json")?;
+    let config_json: Value = serde_json::from_str(&config)?;
+    assert_eq!(config_json["name"], "Directory Browser");
+    assert_eq!(config_json["godot_project_name"], "platformer");
+    assert_eq!(config_json["is_plugin"], true);
+    assert_eq!(config_json["modules"], json!([]));
 
-    set_current_dir("../").expect("Unable to change to parent directory");
+    // 4. Assert that by default the plugin should have a module with the name of the plugin.
+    let plugin_module_path = Path::new("src/directory_browser.rs");
+    assert_eq!(plugin_module_path.exists(), true);
 
-    cleanup_test_files();
-
-    Ok(())
-}
-
-#[test]
-fn plugin_has_correct_plugin_cfg_in_godot_project() -> Result<(), Box<dyn Error>> {
-    init_test();
-
-    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-    cmd.arg("new")
-        .arg("platformer_modules")
-        .arg("platformer")
-        .arg("--skip-build");
-
-    cmd.assert().success();
-
-    set_current_dir("platformer_modules").expect("Unable to change to library directory");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
-
-    let plugin_config = read_to_string("../platformer/addons/directory_browser/plugin.cfg")
-        .expect("Unable to read gdnlib");
-    let plugin_config_split = plugin_config.split("\n").collect::<Vec<&str>>();
-
-    assert_eq!(plugin_config_split[0].trim(), "[plugin]");
+    // 5. Assert that the contents of the plugin's initial module matches the initial tool module.
+    let plugin_module_string = read_to_string(plugin_module_path)?;
+    let plugin_module_split = plugin_module_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(plugin_module_split[0], "use gdnative::api::EditorPlugin;");
     assert_eq!(
-        plugin_config_split[1].trim(),
-        "name = \"Directory Browser\""
-    );
-    assert_eq!(plugin_config_split[2].trim(), "description = \"\"");
-    assert_eq!(plugin_config_split[3].trim(), "author = \"\"");
-    assert_eq!(plugin_config_split[4].trim(), "version = \"1.0\"");
-    assert_eq!(
-        plugin_config_split[5].trim(),
-        "script = \"../../rust_modules/directory_browser.gdns\""
-    );
-
-    set_current_dir("../").expect("Unable to change to parent directory");
-
-    cleanup_test_files();
-
-    Ok(())
-}
-
-#[test]
-fn plugin_has_correct_initial_module_file() -> Result<(), Box<dyn Error>> {
-    init_test();
-
-    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-    cmd.arg("new")
-        .arg("platformer_modules")
-        .arg("platformer")
-        .arg("--skip-build");
-
-    cmd.assert().success();
-
-    set_current_dir("platformer_modules").expect("Unable to change to library directory");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
-
-    let plugin_base_gdns =
-        read_to_string("src/directory_browser.rs").expect("Unable to read mod file");
-    let plugin_base_gdns_split = plugin_base_gdns.split("\n").collect::<Vec<&str>>();
-
-    assert_eq!(
-        plugin_base_gdns_split[0],
-        "use gdnative::api::EditorPlugin;"
-    );
-    assert_eq!(
-        plugin_base_gdns_split[1],
-        "use gdnative::nativescript::user_data;"
-    );
-    assert_eq!(plugin_base_gdns_split[2], "");
-    assert_eq!(
-        plugin_base_gdns_split[3],
-        "#[derive(gdnative::NativeClass)]"
-    );
-    assert_eq!(plugin_base_gdns_split[4], "#[inherit(EditorPlugin)]");
-    assert_eq!(
-        plugin_base_gdns_split[5],
+        plugin_module_split[5],
         "#[user_data(user_data::LocalCellData<DirectoryBrowser>)]"
     );
-    assert_eq!(plugin_base_gdns_split[6], "pub struct DirectoryBrowser;");
-    assert_eq!(plugin_base_gdns_split[7], "");
-    assert_eq!(plugin_base_gdns_split[8], "#[gdnative::methods]");
-    assert_eq!(plugin_base_gdns_split[9], "impl DirectoryBrowser {");
+    assert_eq!(plugin_module_split[6], "pub struct DirectoryBrowser;");
+    assert_eq!(plugin_module_split[9], "impl DirectoryBrowser {");
+    assert_eq!(plugin_module_split[11].trim(), "DirectoryBrowser");
+
+    // 6. Assert that the lib file exists.
+    let lib_file_path = Path::new("src/lib.rs");
+    assert_eq!(lib_file_path.exists(), true);
+
+    // 7. Assert that the plugin's initial module is added to the lib file.
+    let lib_file_string = read_to_string(lib_file_path)?;
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(lib_file_split[0], "mod directory_browser;");
     assert_eq!(
-        plugin_base_gdns_split[10].trim(),
-        "fn new(_owner: &EditorPlugin) -> Self {"
-    );
-    assert_eq!(plugin_base_gdns_split[11].trim(), "DirectoryBrowser");
-    assert_eq!(plugin_base_gdns_split[12].trim(), "}");
-    assert_eq!(plugin_base_gdns_split[13], "");
-    assert_eq!(plugin_base_gdns_split[14].trim(), "#[export]");
-    assert_eq!(
-        plugin_base_gdns_split[15].trim(),
-        "fn _ready(&self, _owner: &EditorPlugin) {"
-    );
-    assert_eq!(
-        plugin_base_gdns_split[16].trim(),
-        "gdnative::godot_print!(\"hello, world.\");"
-    );
-    assert_eq!(plugin_base_gdns_split[17].trim(), "}");
-    assert_eq!(plugin_base_gdns_split[18], "}");
-    assert_eq!(plugin_base_gdns_split[19], "");
-
-    set_current_dir("../").expect("Unable to change to parent directory");
-
-    cleanup_test_files();
-
-    Ok(())
-}
-
-#[test]
-fn plugin_has_correct_gdns_file_in_godot_project_rust_modules() -> Result<(), Box<dyn Error>> {
-    init_test();
-
-    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-    cmd.arg("new")
-        .arg("platformer_modules")
-        .arg("platformer")
-        .arg("--skip-build");
-
-    cmd.assert().success();
-
-    set_current_dir("platformer_modules").expect("Unable to change to library directory");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
-
-    let plugin_base_gdns = read_to_string("../platformer/rust_modules/directory_browser.gdns")
-        .expect("Unable to read gdnlib");
-    let plugin_base_gdns_split = plugin_base_gdns.split("\n").collect::<Vec<&str>>();
-
-    assert_eq!(
-        plugin_base_gdns_split[0].trim(),
-        "[gd_resource type=\"NativeScript\" load_steps=2 format=2]"
-    );
-    assert_eq!(plugin_base_gdns_split[1].trim(), "");
-    assert_eq!(
-        plugin_base_gdns_split[2].trim(),
-        "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
-    );
-    assert_eq!(plugin_base_gdns_split[3].trim(), "");
-    assert_eq!(plugin_base_gdns_split[4].trim(), "[resource]");
-    assert_eq!(plugin_base_gdns_split[5].trim(), "");
-    assert_eq!(
-        plugin_base_gdns_split[6].trim(),
-        "resource_name = \"DirectoryBrowser\""
-    );
-    assert_eq!(
-        plugin_base_gdns_split[7].trim(),
-        "class_name = \"DirectoryBrowser\""
-    );
-    assert_eq!(plugin_base_gdns_split[8], "library = ExtResource( 1 )");
-
-    set_current_dir("../").expect("Unable to change to parent directory");
-
-    cleanup_test_files();
-
-    Ok(())
-}
-
-#[test]
-fn plugin_mod_and_handle_added_to_lib_file() -> Result<(), Box<dyn Error>> {
-    init_test();
-
-    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-    cmd.arg("new")
-        .arg("platformer_modules")
-        .arg("platformer")
-        .arg("--skip-build");
-
-    cmd.assert().success();
-
-    set_current_dir("platformer_modules").expect("Unable to change to library directory");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
-
-    let plugin_lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
-    let plugin_lib_file_split = plugin_lib_file.split("\n").collect::<Vec<&str>>();
-
-    assert_eq!(plugin_lib_file_split[0], "mod directory_browser;");
-    assert_eq!(
-        plugin_lib_file_split[4].trim(),
+        lib_file_split[4].trim(),
         "handle.add_tool_class::<directory_browser::DirectoryBrowser>();"
     );
 
-    set_current_dir("../").expect("Unable to change to parent directory");
+    set_current_dir("../")?;
 
     cleanup_test_files();
 
     Ok(())
 }
 
+/// Creates a plugin and checks that all of the files in the Godot project
+/// exist and that their values are what they should be.
 #[test]
-fn plugin_destroy_remove_from_library_lib_file_and_godot_project_rust_modules_and_plugin_directory(
-) -> Result<(), Box<dyn Error>> {
+fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
     init_test();
 
-    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-    cmd.arg("new")
-        .arg("platformer_modules")
+    // 1. Assert that the plugin command was successful.
+    let mut cmd = Command::new("cargo");
+    cmd.arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
         .arg("platformer")
-        .arg("--skip-build");
-
+        .arg("--plugin");
     cmd.assert().success();
 
-    set_current_dir("platformer_modules").expect("Unable to change to library directory");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("destroy")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
+    // 2. Assert that the plugin directory in the Godot project was created.
+    let plugin_godot_dir = Path::new("platformer/addons/directory_browser");
+    assert_eq!(plugin_godot_dir.exists(), true);
 
-    let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
-    let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
+    // 3. Assert that the dynamic library for the plugin exists in the plugin's bin directory.
+    let plugin_dynamic_library_name = format!(
+        "platformer/addons/directory_browser/bin/{}directory_browser.{}",
+        BUILD_FILE_PREFIX, BUILD_FILE_TYPE
+    );
+    let plugin_dynamic_library_path = Path::new(&plugin_dynamic_library_name);
+    assert_eq!(plugin_dynamic_library_path.exists(), true);
 
-    let config = read_to_string("godot-rust-cli.json").expect("Unable to read config");
-    let v: Value = serde_json::from_str(&config)?;
+    // 4. Assert that the `rust_modules` directory was created in the plugin's directory.
+    let plugin_rust_modules_path = Path::new("platformer/addons/directory_browser/rust_modules");
+    assert_eq!(plugin_rust_modules_path.exists(), true);
 
-    let plugin_file_path = Path::new("src/directory_browser.rs");
-    let plugin_gdns_file = Path::new("../platformer/rust_modules/directory_browser.gdns");
-    let plugin_godot_directory = Path::new("../platformer/addons/directory_browser");
+    // 5. Assert that the `plugin.cfg` file exists.
+    let plugin_cfg_path = Path::new("platformer/addons/directory_browser/plugin.cfg");
+    assert_eq!(plugin_cfg_path.exists(), true);
 
-    assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
-    assert_eq!(lib_file_split[1], "");
-    assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
-    assert_eq!(lib_file_split[3], "");
-    assert_eq!(lib_file_split[4], "godot_init!(init);");
-    assert_eq!(v["modules"], json!([]));
-    assert_eq!(plugin_file_path.exists(), false);
-    assert_eq!(plugin_gdns_file.exists(), false);
-    assert_eq!(plugin_godot_directory.exists(), false);
+    // 6. Assert that the contents of the `plugin.cfg` are what we expect.
+    let plugin_cfg_string = read_to_string(plugin_cfg_path)?;
+    let plugin_cfg_split = plugin_cfg_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(plugin_cfg_split[0], "[plugin]");
+    assert_eq!(plugin_cfg_split[1], "name = \"Directory Browser\"");
+    assert_eq!(plugin_cfg_split[5], "script = \"directory_browser.gdns\"");
 
-    set_current_dir("../").expect("Unable to change to parent directory");
+    // 7. Assert that the plugin's gdns file exists.
+    let plugin_gdns_path = Path::new("platformer/addons/directory_browser/directory_browser.gdns");
+    assert_eq!(plugin_gdns_path.exists(), true);
+
+    // 8. Assert that the contents of the plugin's gdns file are what we expect.
+    let plugin_gdns_string = read_to_string(plugin_gdns_path)?;
+    let plugin_gdns_split = plugin_gdns_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(plugin_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
+    assert_eq!(plugin_gdns_split[6], "resource_name = \"DirectoryBrowser\"");
+    assert_eq!(plugin_gdns_split[7], "class_name = \"DirectoryBrowser\"");
+
+    // 9. Assert that the plugin's gdnlib file exists.
+    let plugin_gdnlib_path =
+        Path::new("platformer/addons/directory_browser/directory_browser.gdnlib");
+    assert_eq!(plugin_gdnlib_path.exists(), true);
+
+    // 10. Assert that the contents of the plugin's gdnlib file are what we expect.
+    let plugin_gdnlib_string = read_to_string(plugin_gdnlib_path)?;
+    let plugin_gdnlib_split = plugin_gdnlib_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(
+        plugin_gdnlib_split[9],
+        "OSX.64=\"res://addons/directory_browser/bin/libdirectory_browser.dylib\""
+    );
+    assert_eq!(
+        plugin_gdnlib_split[10],
+        "Windows.64=\"res://addons/directory_browser/bin/directory_browser.dll\""
+    );
+    assert_eq!(
+        plugin_gdnlib_split[11],
+        "X11.64=\"res://addons/directory_browser/bin/libdirectory_browser.so\""
+    );
 
     cleanup_test_files();
 
     Ok(())
 }
 
+/// Creates a plugin and then creates a module within the plugin and checks to
+/// make sure the module is added to the library.
 #[test]
-fn plugin_destroy_create_three_modules_and_two_plugins_remove_one_module_and_one_plugin(
-) -> Result<(), Box<dyn Error>> {
+fn plugin_create_module_library_structure() -> Result<(), Box<dyn Error>> {
     init_test();
 
-    let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-    cmd.arg("new")
-        .arg("platformer_modules")
+    // 1. Assert that the plugin command was successful.
+    let mut cmd_plugin = Command::new("cargo");
+    cmd_plugin
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
         .arg("platformer")
+        .arg("--plugin")
         .arg("--skip-build");
+    cmd_plugin.assert().success();
 
-    cmd.assert().success();
+    set_current_dir("directory_browser")?;
 
-    set_current_dir("platformer_modules").expect("Unable to change to library directory");
-    Command::new("cargo")
+    // 2. Assert the create module command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
         .arg("run")
         .arg("--manifest-path=../../Cargo.toml")
         .arg("create")
-        .arg("Player")
-        .output()
-        .expect("Unable to execute cargo run");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("create")
-        .arg("MainScene")
-        .output()
-        .expect("Unable to execute cargo run");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("create")
-        .arg("Ship")
-        .output()
-        .expect("Unable to execute cargo run");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("File Parser")
-        .output()
-        .expect("Unable to execute cargo run");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("plugin")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("destroy")
-        .arg("Ship")
-        .output()
-        .expect("Unable to execute cargo run");
-    Command::new("cargo")
-        .arg("run")
-        .arg("--manifest-path=../../Cargo.toml")
-        .arg("destroy")
-        .arg("Directory Browser")
-        .output()
-        .expect("Unable to execute cargo run");
+        .arg("Explorer");
+    cmd_create.assert().success();
 
-    let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
-    let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
+    // 3: Assert that the config includes the new module.
+    let config = read_to_string("godot-rust-cli.json")?;
+    let config_json: Value = serde_json::from_str(&config)?;
+    assert_eq!(config_json["modules"], json!(["Explorer"]));
 
-    let config = read_to_string("godot-rust-cli.json").expect("Unable to read config");
-    let v: Value = serde_json::from_str(&config)?;
+    // 4. Assert that the plugin module has a mod file.
+    let module_path = Path::new("src/explorer.rs");
+    assert_eq!(module_path.exists(), true);
 
-    let player_mod_file_path = Path::new("src/player.rs");
-    let main_scene_mod_file_path = Path::new("src/main_scene.rs");
-    let ship_mod_file_path = Path::new("src/ship.rs");
-    let file_parser_mod_file_path = Path::new("src/file_parser.rs");
-    let directory_browser_mod_file_path = Path::new("src/directory_browser.rs");
+    // 5. Assert that the contents of the module's file matches the initial tool module.
+    let module_string = read_to_string(module_path)?;
+    let module_split = module_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(module_split[0], "use gdnative::api::EditorPlugin;");
+    assert_eq!(
+        module_split[5],
+        "#[user_data(user_data::LocalCellData<Explorer>)]"
+    );
+    assert_eq!(module_split[6], "pub struct Explorer;");
+    assert_eq!(module_split[9], "impl Explorer {");
+    assert_eq!(module_split[11].trim(), "Explorer");
 
-    let player_gdns_file = Path::new("../platformer/rust_modules/player.gdns");
-    let main_scene_gdns_file = Path::new("../platformer/rust_modules/main_scene.gdns");
-    let ship_gdns_file = Path::new("../platformer/rust_modules/ship.gdns");
-    let file_parser_gdns_file = Path::new("../platformer/rust_modules/file_parser.gdns");
-    let directory_browser_gdns_file =
-        Path::new("../platformer/rust_modules/directory_browser.gdns");
-
-    let file_parser_godot_plugin_dir = Path::new("../platformer/addons/file_parser");
-    let directory_browser_godot_plugin_dir = Path::new("../platformer/addons/directory_browser");
-
-    assert_eq!(lib_file_split[0], "mod file_parser;");
-    assert_eq!(lib_file_split[1], "mod main_scene;");
-    assert_eq!(lib_file_split[2], "mod player;");
-    assert_eq!(lib_file_split[3], "use gdnative::prelude::*;");
-    assert_eq!(lib_file_split[4], "");
-    assert_eq!(lib_file_split[5], "fn init(handle: InitHandle) {");
+    // 6. Assert that the module is added to the lib file.
+    let lib_file_string = read_to_string("src/lib.rs")?;
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(lib_file_split[0], "mod directory_browser;");
+    assert_eq!(lib_file_split[1], "mod explorer;");
+    assert_eq!(
+        lib_file_split[5].trim(),
+        "handle.add_tool_class::<explorer::Explorer>();"
+    );
     assert_eq!(
         lib_file_split[6].trim(),
-        "handle.add_class::<player::Player>();"
+        "handle.add_tool_class::<directory_browser::DirectoryBrowser>();"
     );
+
+    set_current_dir("../")?;
+
+    cleanup_test_files();
+
+    Ok(())
+}
+
+/// Creates a plugin and then creates a module within the plugin and checks to
+/// make sure the module is added to Godot project.
+#[test]
+fn plugin_create_module_godot_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
+
+    // 1. Assert that the plugin command was successful.
+    let mut cmd_plugin = Command::new("cargo");
+    cmd_plugin
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
+        .arg("platformer")
+        .arg("--plugin")
+        .arg("--skip-build");
+    cmd_plugin.assert().success();
+
+    set_current_dir("directory_browser")?;
+
+    // 2. Assert the create module command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Explorer");
+    cmd_create.assert().success();
+
+    // 3. Assert the build command was successful.
+    let mut cmd_build = Command::new("cargo");
+    cmd_build
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("build");
+    cmd_build.assert().success();
+
+    set_current_dir("../")?;
+
+    // 3. Assert that the dynamic library for the plugin exists in the plugin's bin directory.
+    let plugin_dynamic_library_name = format!(
+        "platformer/addons/directory_browser/bin/{}directory_browser.{}",
+        BUILD_FILE_PREFIX, BUILD_FILE_TYPE
+    );
+    let plugin_dynamic_library_path = Path::new(&plugin_dynamic_library_name);
+    assert_eq!(plugin_dynamic_library_path.exists(), true);
+
+    // 4. Assert that the plugin's gdns file exists.
+    let module_gdns_path =
+        Path::new("platformer/addons/directory_browser/rust_modules/explorer.gdns");
+    assert_eq!(module_gdns_path.exists(), true);
+
+    // 8. Assert that the contents of the plugin's gdns file are what we expect.
+    let module_gdns_string = read_to_string(module_gdns_path)?;
+    let module_gdns_split = module_gdns_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(module_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
+    assert_eq!(module_gdns_split[6], "resource_name = \"Explorer\"");
+    assert_eq!(module_gdns_split[7], "class_name = \"Explorer\"");
+
+    cleanup_test_files();
+
+    Ok(())
+}
+
+/// Creates a plugin and then creates a module within the plugin and lastly
+/// deletes the module and checks the library structure.
+#[test]
+fn plugin_destroy_module_library_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
+
+    // 1. Assert that the plugin command was successful.
+    let mut cmd_plugin = Command::new("cargo");
+    cmd_plugin
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
+        .arg("platformer")
+        .arg("--plugin")
+        .arg("--skip-build");
+    cmd_plugin.assert().success();
+
+    set_current_dir("directory_browser")?;
+
+    // 2. Assert the create module command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Explorer");
+    cmd_create.assert().success();
+
+    // 3: Assert that the config includes the new module.
+    let config = read_to_string("godot-rust-cli.json")?;
+    let config_json: Value = serde_json::from_str(&config)?;
+    assert_eq!(config_json["modules"], json!(["Explorer"]));
+
+    // 4. Assert that the destroy module command was successful.
+    let mut cmd_destroy = Command::new("cargo");
+    cmd_destroy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Explorer");
+    cmd_destroy.assert().success();
+
+    // 5: Assert that the config no longer includes the new module.
+    let config_updated = read_to_string("godot-rust-cli.json")?;
+    let config_updated_json: Value = serde_json::from_str(&config_updated)?;
+    assert_eq!(config_updated_json["modules"], json!([]));
+
+    // 4. Assert that the plugin module no longer has a mod file.
+    let module_path = Path::new("src/explorer.rs");
+    assert_eq!(module_path.exists(), false);
+
+    // 5. Assert that the module is removed from the lib file.
+    let lib_file_string = read_to_string("src/lib.rs")?;
+    let lib_file_split = lib_file_string
+        .split("\n")
+        .map(|x| x.replace("\r", ""))
+        .collect::<Vec<String>>();
+    assert_eq!(lib_file_split[0], "mod directory_browser;");
     assert_eq!(
-        lib_file_split[7].trim(),
-        "handle.add_tool_class::<file_parser::FileParser>();"
+        lib_file_split[4].trim(),
+        "handle.add_tool_class::<directory_browser::DirectoryBrowser>();"
     );
-    assert_eq!(
-        lib_file_split[8].trim(),
-        "handle.add_class::<main_scene::MainScene>();"
-    );
-    assert_eq!(lib_file_split[9], "}");
-    assert_eq!(lib_file_split[10], "");
-    assert_eq!(lib_file_split[11], "godot_init!(init);");
 
-    assert_eq!(v["modules"], json!(["Player", "MainScene", "FileParser"]));
+    set_current_dir("../")?;
 
-    assert_eq!(player_mod_file_path.exists(), true);
-    assert_eq!(main_scene_mod_file_path.exists(), true);
-    assert_eq!(file_parser_mod_file_path.exists(), true);
-    assert_eq!(directory_browser_mod_file_path.exists(), false);
-    assert_eq!(ship_mod_file_path.exists(), false);
+    cleanup_test_files();
 
-    assert_eq!(player_gdns_file.exists(), true);
-    assert_eq!(main_scene_gdns_file.exists(), true);
-    assert_eq!(file_parser_gdns_file.exists(), true);
-    assert_eq!(directory_browser_gdns_file.exists(), false);
-    assert_eq!(ship_gdns_file.exists(), false);
+    Ok(())
+}
 
-    assert_eq!(file_parser_godot_plugin_dir.exists(), true);
-    assert_eq!(directory_browser_godot_plugin_dir.exists(), false);
+/// Creates a plugin and then creates a module within the plugin and lastly
+/// deletes the module and checks the Godot project structure.
+#[test]
+fn plugin_destroy_module_godot_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-    set_current_dir("../").expect("Unable to change to parent directory");
+    // 1. Assert that the plugin command was successful.
+    let mut cmd_plugin = Command::new("cargo");
+    cmd_plugin
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
+        .arg("platformer")
+        .arg("--plugin")
+        .arg("--skip-build");
+    cmd_plugin.assert().success();
+
+    set_current_dir("directory_browser")?;
+
+    // 2. Assert the create module command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Explorer");
+    cmd_create.assert().success();
+
+    // 3. Assert the destroy module command was successful.
+    let mut cmd_destroy = Command::new("cargo");
+    cmd_destroy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Explorer");
+    cmd_destroy.assert().success();
+
+    set_current_dir("../")?;
+
+    // 4. Assert that the plugin's gdns file no longer exists.
+    let module_gdns_path =
+        Path::new("platformer/addons/directory_browser/rust_modules/explorer.gdns");
+    assert_eq!(module_gdns_path.exists(), false);
+
+    cleanup_test_files();
+
+    Ok(())
+}
+
+/// Creates a plugin and then attempts to delete the root plugin module.
+#[test]
+fn plugin_destroy_root_module() -> Result<(), Box<dyn Error>> {
+    init_test();
+
+    // 1. Assert that the plugin command was successful.
+    let mut cmd_plugin = Command::new("cargo");
+    cmd_plugin
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("Directory Browser")
+        .arg("platformer")
+        .arg("--plugin")
+        .arg("--skip-build");
+    cmd_plugin.assert().success();
+
+    set_current_dir("directory_browser")?;
+
+    // 2. Assert the destroy module command was not successful.
+    let mut cmd_destroy = Command::new("cargo");
+    cmd_destroy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Directory Browser");
+    cmd_destroy.assert().failure();
+
+    set_current_dir("../")?;
 
     cleanup_test_files();
 

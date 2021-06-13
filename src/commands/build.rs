@@ -47,6 +47,8 @@ pub fn build_library() {
         dynamic_library_ext
     );
     let dynamic_library_file = dynamic_libraries_path.join(dynamic_library_file_name);
+    // The path to the Godot project.
+    let godot_project_dir = parent_dir.join(&config.godot_project_name);
 
     log_version();
     log_styled_message_to_console("building...", ConsoleColors::CYAN);
@@ -56,13 +58,18 @@ pub fn build_library() {
 
     // The path to where the dynamic libraries should be stored in the Godot
     // project directory.
-    let bin_path = parent_dir.join(&config.godot_project_name).join("bin");
+    let bin_path = if config.is_plugin {
+        godot_project_dir
+            .join("addons")
+            .join(&config.name.to_case(Case::Snake))
+            .join("bin")
+    } else {
+        parent_dir.join(&config.godot_project_name).join("bin")
+    };
 
     // Create the `bin` folder in the Godot project if it doesn't already exist.
     create_dir_all(&bin_path).expect("Unable to create bin directory in the Godot project");
 
-    // Copy the dynamic library created from the build to the `bin` directory
-    // in the Godot project.
     copy_file_to_location(&dynamic_library_file, &bin_path);
 
     log_styled_message_to_console("Build complete", ConsoleColors::GREEN);
