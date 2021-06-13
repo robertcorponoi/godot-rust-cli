@@ -44,7 +44,7 @@ fn create_module_library_structure() -> Result<(), Box<dyn Error>> {
 
     // 4. Assert that the module contents are what we expect.
     let module_mod_string = read_to_string(module_mod_path)?;
-    let module_mod_split = module_mod_string.split("\r\n").collect::<Vec<&str>>();
+    let module_mod_split = module_mod_string.split("\n").collect::<Vec<&str>>();
     assert_eq!(module_mod_split[0], "use gdnative::api::Node2D;");
     assert_eq!(module_mod_split[5], "pub struct Player;");
     assert_eq!(module_mod_split[8], "impl Player {");
@@ -108,7 +108,7 @@ fn create_module_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 4. Assert that the gnds file has the correct contents.
     let module_gdns_string = read_to_string(module_gdns_path)?;
-    let module_gdns_split = module_gdns_string.split("\r\n").collect::<Vec<&str>>();
+    let module_gdns_split = module_gdns_string.split("\n").collect::<Vec<&str>>();
     assert_eq!(
         module_gdns_split[2],
         "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
@@ -261,7 +261,7 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
     // 4. Assert that the gnds files have the correct contents.
     let player_module_gdns_string = read_to_string(player_module_gdns_path)?;
     let player_module_gdns_split = player_module_gdns_string
-        .split("\r\n")
+        .split("\n")
         .collect::<Vec<&str>>();
     assert_eq!(
         player_module_gdns_split[2],
@@ -272,7 +272,7 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
 
     let enemy_module_gdns_string = read_to_string(enemy_module_gdns_path)?;
     let enemy_module_gdns_split = enemy_module_gdns_string
-        .split("\r\n")
+        .split("\n")
         .collect::<Vec<&str>>();
     assert_eq!(
         enemy_module_gdns_split[2],
@@ -283,7 +283,7 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
 
     let level_module_gdns_string = read_to_string(level_module_gdns_path)?;
     let level_module_gdns_split = level_module_gdns_string
-        .split("\r\n")
+        .split("\n")
         .collect::<Vec<&str>>();
     assert_eq!(
         level_module_gdns_split[2],

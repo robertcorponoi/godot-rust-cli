@@ -102,7 +102,7 @@ fn new_create_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 5. Assert that the contents of the gdnlib file are what we expect.
     let gdnlib_string = read_to_string(gdnlib_path)?;
-    let gdnlib_split = gdnlib_string.split("\r\n").collect::<Vec<&str>>();
+    let gdnlib_split = gdnlib_string.split("\n").collect::<Vec<&str>>();
     assert_eq!(
         gdnlib_split[9],
         "OSX.64=\"res://bin/libplatformer_modules.dylib\""

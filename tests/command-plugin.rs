@@ -115,7 +115,7 @@ fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 6. Assert that the contents of the `plugin.cfg` are what we expect.
     let plugin_cfg_string = read_to_string(plugin_cfg_path)?;
-    let plugin_cfg_split = plugin_cfg_string.split("\r\n").collect::<Vec<&str>>();
+    let plugin_cfg_split = plugin_cfg_string.split("\n").collect::<Vec<&str>>();
     assert_eq!(plugin_cfg_split[0], "[plugin]");
     assert_eq!(plugin_cfg_split[1], "name = \"Directory Browser\"");
     assert_eq!(plugin_cfg_split[5], "script = \"directory_browser.gdns\"");
@@ -126,7 +126,7 @@ fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 8. Assert that the contents of the plugin's gdns file are what we expect.
     let plugin_gdns_string = read_to_string(plugin_gdns_path)?;
-    let plugin_gdns_split = plugin_gdns_string.split("\r\n").collect::<Vec<&str>>();
+    let plugin_gdns_split = plugin_gdns_string.split("\n").collect::<Vec<&str>>();
     assert_eq!(plugin_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
     assert_eq!(plugin_gdns_split[6], "resource_name = \"DirectoryBrowser\"");
     assert_eq!(plugin_gdns_split[7], "class_name = \"DirectoryBrowser\"");
@@ -138,7 +138,7 @@ fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 10. Assert that the contents of the plugin's gdnlib file are what we expect.
     let plugin_gdnlib_string = read_to_string(plugin_gdnlib_path)?;
-    let plugin_gdnlib_split = plugin_gdnlib_string.split("\r\n").collect::<Vec<&str>>();
+    let plugin_gdnlib_split = plugin_gdnlib_string.split("\n").collect::<Vec<&str>>();
     assert_eq!(
         plugin_gdnlib_split[9],
         "OSX.64=\"res://addons/directory_browser/bin/libdirectory_browser.dylib\""
@@ -282,7 +282,7 @@ fn plugin_create_module_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 8. Assert that the contents of the plugin's gdns file are what we expect.
     let module_gdns_string = read_to_string(module_gdns_path)?;
-    let module_gdns_split = module_gdns_string.split("\r\n").collect::<Vec<&str>>();
+    let module_gdns_split = module_gdns_string.split("\n").collect::<Vec<&str>>();
     assert_eq!(module_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
     assert_eq!(module_gdns_split[6], "resource_name = \"Explorer\"");
     assert_eq!(module_gdns_split[7], "class_name = \"Explorer\"");

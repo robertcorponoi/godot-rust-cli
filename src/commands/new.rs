@@ -6,6 +6,7 @@ use std::process::{exit, Command};
 use convert_case::{Case, Casing};
 
 use crate::command_build::build_library;
+use crate::command_create::create_module;
 use crate::config_utils::{create_initial_config, Config};
 use crate::definitions::CargoToml;
 use crate::file_utils::write_and_fmt;
@@ -253,11 +254,7 @@ fn create_plugin_structure_in_godot(plugin_name: &str, godot_project_path: &Path
     create_dir_all(&godot_plugin_dir)
         .expect("Unable to create plugin directory structure in Godot project");
 
-    Command::new("godot-rust-cli")
-        .arg("create")
-        .arg(&plugin_name)
-        .status()
-        .expect("Unable to create plugin module");
+    create_module(&plugin_name);
 
     let plugin_cfg = include_str!("../templates/plugin-cfg.txt");
     let plugin_cfg_with_name = plugin_cfg.replace("PLUGIN_NAME", &plugin_name);
