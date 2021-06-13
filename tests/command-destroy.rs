@@ -1,262 +1,398 @@
-// use assert_cmd::prelude::*;
+use assert_cmd::prelude::*;
 
-// use serde_json::{json, Value};
-// use std::env::set_current_dir;
-// use std::error::Error;
-// use std::fs::read_to_string;
-// use std::path::Path;
-// use std::process::Command;
+use serde_json::{json, Value};
+use std::env::set_current_dir;
+use std::error::Error;
+use std::fs::read_to_string;
+use std::path::Path;
+use std::process::Command;
 
-// mod test_utilities;
-// use test_utilities::{cleanup_test_files, init_test};
+mod test_utilities;
+use test_utilities::{cleanup_test_files, init_test};
 
-// #[test]
-// fn destroy_remove_module_from_library_lib_file_and_godot_project_rust_modules(
-// ) -> Result<(), Box<dyn Error>> {
-//     init_test();
+/// Creates a library and a module and then destroys it and checks to make sure
+/// the library structure is correct.
+#[test]
+fn destroy_module_library_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
+    // 1. Assert that the new command was successful.
+    let mut cmd_new = Command::new("cargo");
+    cmd_new
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer")
+        .arg("--skip-build");
+    cmd_new.assert().success();
 
-//     cmd.assert().success();
+    set_current_dir("platformer_modules")?;
 
-//     set_current_dir("platformer_modules").expect("Unable to change to library directory");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("create")
-//         .arg("Player")
-//         .output()
-//         .expect("Unable to execute cargo run");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("destroy")
-//         .arg("Player")
-//         .output()
-//         .expect("Unable to execute cargo run");
+    // 2. Assert that the create command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Player");
+    cmd_create.assert().success();
 
-//     let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
-//     let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
+    // 3. Assert that the destroy command was successful.
+    let mut cmd_destroy = Command::new("cargo");
+    cmd_destroy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Player");
+    cmd_destroy.assert().success();
 
-//     let config = read_to_string("godot-rust-cli.json").expect("Unable to read config");
-//     let v: Value = serde_json::from_str(&config)?;
+    // 4. Assert that the module no longer has a mod file.
+    let module_mod_path = Path::new("src/player.rs");
+    assert_eq!(module_mod_path.exists(), false);
 
-//     let mod_file_path = Path::new("src/player.rs");
+    // 5. Assert that the module was removed from the lib file.
+    let lib_file_string = read_to_string("src/lib.rs")?;
+    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
+    assert_eq!(lib_file_split[1], "");
+    assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
+    assert_eq!(lib_file_split[3], "");
+    assert_eq!(lib_file_split[4], "godot_init!(init);");
 
-//     let player_gdns_file = Path::new("../platformer/rust_modules/player.gdns");
+    // 6. Assert that the module was removed from the config.
+    let config = read_to_string("godot-rust-cli.json")?;
+    let config_json: Value = serde_json::from_str(&config)?;
+    assert_eq!(config_json["modules"], json!([]));
 
-//     assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
-//     assert_eq!(lib_file_split[1], "");
-//     assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
-//     assert_eq!(lib_file_split[3], "");
-//     assert_eq!(lib_file_split[4], "godot_init!(init);");
-//     assert_eq!(v["modules"], json!([]));
+    set_current_dir("../")?;
 
-//     assert_eq!(mod_file_path.exists(), false);
-//     assert_eq!(player_gdns_file.exists(), false);
+    cleanup_test_files();
 
-//     set_current_dir("../").expect("Unable to change to parent directory");
+    Ok(())
+}
 
-//     cleanup_test_files();
+/// Creates a library and a module and then destroys it and checks to make sure
+/// the Godot project structure is correct.
+#[test]
+fn destroy_module_godot_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//     Ok(())
-// }
+    // 1. Assert that the new command was successful.
+    let mut cmd_new = Command::new("cargo");
+    cmd_new
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer")
+        .arg("--skip-build");
+    cmd_new.assert().success();
 
-// #[test]
-// fn destroy_create_five_modules_remove_two_modules() -> Result<(), Box<dyn Error>> {
-//     init_test();
+    set_current_dir("platformer_modules")?;
 
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
+    // 2. Assert that the create command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Player");
+    cmd_create.assert().success();
 
-//     cmd.assert().success();
+    // 3. Assert that the destroy command was successful.
+    let mut cmd_destroy = Command::new("cargo");
+    cmd_destroy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Player");
+    cmd_destroy.assert().success();
 
-//     set_current_dir("platformer_modules").expect("Unable to change to library directory");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("create")
-//         .arg("Player")
-//         .output()
-//         .expect("Unable to execute cargo run");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("create")
-//         .arg("MainScene")
-//         .output()
-//         .expect("Unable to execute cargo run");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("create")
-//         .arg("Ship")
-//         .output()
-//         .expect("Unable to execute cargo run");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("create")
-//         .arg("Vehicle")
-//         .output()
-//         .expect("Unable to execute cargo run");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("create")
-//         .arg("Enemy")
-//         .output()
-//         .expect("Unable to execute cargo run");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("destroy")
-//         .arg("Ship")
-//         .output()
-//         .expect("Unable to execute cargo run");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("destroy")
-//         .arg("Enemy")
-//         .output()
-//         .expect("Unable to execute cargo run");
+    set_current_dir("../")?;
 
-//     let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
-//     let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
+    // 4. Assert that the module no longer has a gdns file.
+    let module_gdns_path = Path::new("platformer/rust_modules/player.gdns");
+    assert_eq!(module_gdns_path.exists(), false);
 
-//     let config = read_to_string("godot-rust-cli.json").expect("Unable to read config");
-//     let v: Value = serde_json::from_str(&config)?;
+    Ok(())
+}
 
-//     let player_mod_file_path = Path::new("src/player.rs");
-//     let main_scene_mod_file_path = Path::new("src/main_scene.rs");
-//     let ship_mod_file_path = Path::new("src/ship.rs");
-//     let vehicle_mod_file_path = Path::new("src/vehicle.rs");
-//     let enemy_mod_file_path = Path::new("src/enemy.rs");
+/// Creates a library and 5 modules and then destroys 2 of them and checks to
+/// make sure the library structure is correct.
+#[test]
+fn destroy_modules_library_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//     let player_gdns_file = Path::new("../platformer/rust_modules/player.gdns");
-//     let main_scene_gdns_file = Path::new("../platformer/rust_modules/main_scene.gdns");
-//     let ship_gdns_file = Path::new("../platformer/rust_modules/ship.gdns");
-//     let vehicle_gdns_file = Path::new("../platformer/rust_modules/vehicle.gdns");
-//     let enemy_gdns_file = Path::new("../platformer/rust_modules/enemy.gdns");
+    // 1. Assert that the new command was successful.
+    let mut cmd_new = Command::new("cargo");
+    cmd_new
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer")
+        .arg("--skip-build");
+    cmd_new.assert().success();
 
-//     assert_eq!(lib_file_split[0], "mod main_scene;");
-//     assert_eq!(lib_file_split[1], "mod player;");
-//     assert_eq!(lib_file_split[2], "mod vehicle;");
-//     assert_eq!(lib_file_split[3], "use gdnative::prelude::*;");
-//     assert_eq!(lib_file_split[4], "");
-//     assert_eq!(lib_file_split[5], "fn init(handle: InitHandle) {");
-//     assert_eq!(
-//         lib_file_split[6].trim(),
-//         "handle.add_class::<player::Player>();"
-//     );
-//     assert_eq!(
-//         lib_file_split[7].trim(),
-//         "handle.add_class::<vehicle::Vehicle>();"
-//     );
-//     assert_eq!(
-//         lib_file_split[8].trim(),
-//         "handle.add_class::<main_scene::MainScene>();"
-//     );
-//     assert_eq!(lib_file_split[9], "}");
-//     assert_eq!(lib_file_split[10], "");
-//     assert_eq!(lib_file_split[11], "godot_init!(init);");
+    set_current_dir("platformer_modules")?;
 
-//     assert_eq!(v["modules"][0], "Player");
-//     assert_eq!(v["modules"][1], "MainScene");
-//     assert_eq!(v["modules"][2], "Vehicle");
+    // 2. Assert that the create commands were successful.
+    let mut cmd_create_player = Command::new("cargo");
+    cmd_create_player
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Player");
+    cmd_create_player.assert().success();
+    let mut cmd_create_enemy = Command::new("cargo");
+    cmd_create_enemy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Enemy");
+    cmd_create_enemy.assert().success();
+    let mut cmd_create_level = Command::new("cargo");
+    cmd_create_level
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Level");
+    cmd_create_level.assert().success();
+    let mut cmd_create_environment = Command::new("cargo");
+    cmd_create_environment
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Environment");
+    cmd_create_environment.assert().success();
+    let mut cmd_create_space = Command::new("cargo");
+    cmd_create_space
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Space");
+    cmd_create_space.assert().success();
 
-//     assert_eq!(player_mod_file_path.exists(), true);
-//     assert_eq!(main_scene_mod_file_path.exists(), true);
-//     assert_eq!(vehicle_mod_file_path.exists(), true);
-//     assert_eq!(enemy_mod_file_path.exists(), false);
-//     assert_eq!(ship_mod_file_path.exists(), false);
+    // 3. Assert that the destroy commands were successful.
+    let mut cmd_destroy_enemy = Command::new("cargo");
+    cmd_destroy_enemy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Enemy");
+    cmd_destroy_enemy.assert().success();
+    let mut cmd_destroy_space = Command::new("cargo");
+    cmd_destroy_space
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Space");
+    cmd_destroy_space.assert().success();
 
-//     assert_eq!(player_gdns_file.exists(), true);
-//     assert_eq!(main_scene_gdns_file.exists(), true);
-//     assert_eq!(vehicle_gdns_file.exists(), true);
-//     assert_eq!(enemy_gdns_file.exists(), false);
-//     assert_eq!(ship_gdns_file.exists(), false);
+    // 4. Assert that the modules that weren't destroyed have mod files.
+    let player_module_mod_path = Path::new("src/player.rs");
+    let level_module_mod_path = Path::new("src/level.rs");
+    let environment_module_mod_path = Path::new("src/environment.rs");
+    assert_eq!(player_module_mod_path.exists(), true);
+    assert_eq!(level_module_mod_path.exists(), true);
+    assert_eq!(environment_module_mod_path.exists(), true);
 
-//     set_current_dir("../").expect("Unable to change to parent directory");
+    // 5. Assert that the modules that were deleted no longer have mod files.
+    let enemy_module_mod_path = Path::new("src/enemy.rs");
+    let space_module_mod_path = Path::new("src/space.rs");
+    assert_eq!(enemy_module_mod_path.exists(), false);
+    assert_eq!(space_module_mod_path.exists(), false);
 
-//     cleanup_test_files();
+    // 6. Assert that the modules were removed from the lib file.
+    let lib_file_string = read_to_string("src/lib.rs")?;
+    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    assert_eq!(lib_file_split[0], "mod environment;");
+    assert_eq!(lib_file_split[1], "mod level;");
+    assert_eq!(lib_file_split[2], "mod player;");
+    assert_eq!(lib_file_split[3], "use gdnative::prelude::*;");
+    assert_eq!(lib_file_split[4], "");
+    assert_eq!(lib_file_split[5], "fn init(handle: InitHandle) {");
+    assert_eq!(
+        lib_file_split[6].trim(),
+        "handle.add_class::<player::Player>();"
+    );
+    assert_eq!(
+        lib_file_split[7].trim(),
+        "handle.add_class::<environment::Environment>();"
+    );
+    assert_eq!(
+        lib_file_split[8].trim(),
+        "handle.add_class::<level::Level>();"
+    );
+    assert_eq!(lib_file_split[9], "}");
+    assert_eq!(lib_file_split[10], "");
+    assert_eq!(lib_file_split[11], "godot_init!(init);");
 
-//     Ok(())
-// }
+    // 7. Assert that the modules were removed from the config.
+    let config = read_to_string("godot-rust-cli.json")?;
+    let config_json: Value = serde_json::from_str(&config)?;
+    assert_eq!(
+        config_json["modules"],
+        json!(["Player", "Level", "Environment"])
+    );
 
-// #[test]
-// fn destroy_remove_moved_module() -> Result<(), Box<dyn Error>> {
-//     init_test();
+    set_current_dir("../")?;
 
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
+    cleanup_test_files();
 
-//     cmd.assert().success();
+    Ok(())
+}
 
-//     set_current_dir("platformer_modules").expect("Unable to change to library directory");
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("create")
-//         .arg("Player")
-//         .output()
-//         .expect("Unable to execute cargo run");
+/// Creates a library and 5 modules and then destroys 2 of them and checks to
+/// make sure the Godot project structure is correct.
+#[test]
+fn destroy_modules_godot_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//     Command::new("mkdir")
-//         .arg("../platformer/player")
-//         .output()
-//         .expect("Unable to create player dir");
+    // 1. Assert that the new command was successful.
+    let mut cmd_new = Command::new("cargo");
+    cmd_new
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer")
+        .arg("--skip-build");
+    cmd_new.assert().success();
 
-//     Command::new("mv")
-//         .arg("../platformer/rust_modules/player.gdns")
-//         .arg("../platformer/player/player.gdns")
-//         .output()
-//         .expect("Unable to move player script");
+    set_current_dir("platformer_modules")?;
 
-//     Command::new("cargo")
-//         .arg("run")
-//         .arg("--manifest-path=../../Cargo.toml")
-//         .arg("destroy")
-//         .arg("Player")
-//         .output()
-//         .expect("Unable to execute cargo run");
+    // 2. Assert that the create commands were successful.
+    let mut cmd_create_player = Command::new("cargo");
+    cmd_create_player
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Player");
+    cmd_create_player.assert().success();
+    let mut cmd_create_enemy = Command::new("cargo");
+    cmd_create_enemy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Enemy");
+    cmd_create_enemy.assert().success();
+    let mut cmd_create_level = Command::new("cargo");
+    cmd_create_level
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Level");
+    cmd_create_level.assert().success();
+    let mut cmd_create_environment = Command::new("cargo");
+    cmd_create_environment
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Environment");
+    cmd_create_environment.assert().success();
+    let mut cmd_create_space = Command::new("cargo");
+    cmd_create_space
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Space");
+    cmd_create_space.assert().success();
 
-//     let lib_file = read_to_string("src/lib.rs").expect("Unable to read lib file");
-//     let lib_file_split = lib_file.split("\n").collect::<Vec<&str>>();
+    // 3. Assert that the destroy commands were successful.
+    let mut cmd_destroy_enemy = Command::new("cargo");
+    cmd_destroy_enemy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Enemy");
+    cmd_destroy_enemy.assert().success();
+    let mut cmd_destroy_space = Command::new("cargo");
+    cmd_destroy_space
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Space");
+    cmd_destroy_space.assert().success();
 
-//     let config = read_to_string("godot-rust-cli.json").expect("Unable to read config");
-//     let v: Value = serde_json::from_str(&config)?;
+    set_current_dir("../")?;
 
-//     let mod_file_path = Path::new("src/player.rs");
+    // 4. Assert that the modules that weren't deleted have a gdns file still.
+    let player_gdns_path = Path::new("platformer/rust_modules/player.gdns");
+    let level_gdns_path = Path::new("platformer/rust_modules/level.gdns");
+    let environment_gdns_path = Path::new("platformer/rust_modules/environment.gdns");
+    assert_eq!(player_gdns_path.exists(), true);
+    assert_eq!(level_gdns_path.exists(), true);
+    assert_eq!(environment_gdns_path.exists(), true);
 
-//     let player_gdns_file = Path::new("../platformer/rust_modules/player.gdns");
-//     let player_gdns_file_new = Path::new("../platformer/player/player.gdns");
+    // 4. Assert that the modules that were deleted no longer have a gdns file.
+    let enemy_gdns_path = Path::new("platformer/rust_modules/enemy.gdns");
+    let space_gdns_path = Path::new("platformer/rust_modules/space.gdns");
+    assert_eq!(enemy_gdns_path.exists(), false);
+    assert_eq!(space_gdns_path.exists(), false);
 
-//     assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
-//     assert_eq!(lib_file_split[1], "");
-//     assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
-//     assert_eq!(lib_file_split[3], "");
-//     assert_eq!(lib_file_split[4], "godot_init!(init);");
-//     assert_eq!(v["modules"], json!([]));
+    Ok(())
+}
 
-//     assert_eq!(mod_file_path.exists(), false);
-//     assert_eq!(player_gdns_file.exists(), false);
-//     assert_eq!(player_gdns_file_new.exists(), false);
+/// Creates a library and then a module and then moves the module from the
+/// rust_modules folder into its own folder and makes sure that it still gets
+/// deleted.
+#[test]
+fn destroy_moved_module_godot_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//     set_current_dir("../").expect("Unable to change to parent directory");
+    // 1. Assert that the new command was successful.
+    let mut cmd_new = Command::new("cargo");
+    cmd_new
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer")
+        .arg("--skip-build");
+    cmd_new.assert().success();
 
-//     cleanup_test_files();
+    set_current_dir("platformer_modules")?;
 
-//     Ok(())
-// }
+    // 2. Assert that the create command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Player");
+    cmd_create.assert().success();
+
+    Command::new("mkdir")
+        .arg("../platformer/player")
+        .output()
+        .expect("Unable to create player dir");
+
+    Command::new("mv")
+        .arg("../platformer/rust_modules/player.gdns")
+        .arg("../platformer/player/player.gdns")
+        .output()
+        .expect("Unable to move player script");
+
+    // 3. Assert that the destroy command was successful.
+    let mut cmd_destroy = Command::new("cargo");
+    cmd_destroy
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("destroy")
+        .arg("Player");
+    cmd_destroy.assert().success();
+
+    set_current_dir("../")?;
+
+    let module_gdns_path_old = Path::new("platformer/rust_modules/player.gdns");
+    let module_gdns_path_new = Path::new("platformer/player/player.gdns");
+
+    assert_eq!(module_gdns_path_old.exists(), false);
+    assert_eq!(module_gdns_path_new.exists(), false);
+
+    cleanup_test_files();
+
+    Ok(())
+}

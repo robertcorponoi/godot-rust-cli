@@ -1,180 +1,122 @@
-// use assert_cmd::prelude::*;
+use assert_cmd::prelude::*;
 
-// use serde_json::{json, Value};
-// use std::error::Error;
-// use std::fs::read_to_string;
-// use std::path::Path;
-// use std::process::Command;
+use serde_json::{json, Value};
+use std::error::Error;
+use std::fs::read_to_string;
+use std::path::Path;
+use std::process::Command;
 
-// mod test_utilities;
-// use test_utilities::{cleanup_test_files, init_test};
+mod test_utilities;
+use test_utilities::{cleanup_test_files, init_test, BUILD_FILE_PREFIX, BUILD_FILE_TYPE};
 
-// #[test]
-// fn new_library_has_correct_cargo_toml() -> Result<(), Box<dyn Error>> {
-//     init_test();
+/// Creates a library and checks that all of the files in the library exist
+/// and that their values are what they should be.
+#[test]
+fn new_create_library_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
+    // 1. Assert that the new command was successful.
+    let mut cmd = Command::new("cargo");
+    cmd.arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer")
+        .arg("--skip-build");
+    cmd.assert().success();
 
-//     cmd.assert().success();
+    // 2. Assert that the library directory for the plugin was created.
+    let library_dir = Path::new("platformer_modules");
+    assert_eq!(library_dir.exists(), true);
 
-//     let cargo_toml =
-//         read_to_string("platformer_modules/Cargo.toml").expect("Unable to read Cargo.toml");
-//     let cargo_toml_split = cargo_toml.split("\n").collect::<Vec<&str>>();
+    // 3: Assert that the initial config is what it should be.
+    let config = read_to_string("platformer_modules/godot-rust-cli.json")?;
+    let config_json: Value = serde_json::from_str(&config)?;
+    assert_eq!(config_json["name"], "PlatformerModules");
+    assert_eq!(config_json["godot_project_name"], "platformer");
+    assert_eq!(config_json["is_plugin"], false);
+    assert_eq!(config_json["modules"], json!([]));
 
-//     assert_eq!(cargo_toml_split[6], "[lib]");
-//     assert_eq!(cargo_toml_split[7], "crate-type = [\"cdylib\"]");
-//     assert_eq!(cargo_toml_split[9], "[dependencies]");
-//     assert_eq!(cargo_toml_split[10], "gdnative = \"0.9.3\"");
+    // 4. Assert that the lib file exists.
+    let lib_file_path = Path::new("platformer_modules/src/lib.rs");
+    assert_eq!(lib_file_path.exists(), true);
 
-//     cleanup_test_files();
+    // 5. Assert that the plugin's initial module is added to the lib file.
+    let lib_file_string = read_to_string(lib_file_path)?;
+    let lib_file_split = lib_file_string.split("\n").collect::<Vec<&str>>();
+    assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
+    assert_eq!(lib_file_split[1], "");
+    assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
+    assert_eq!(lib_file_split[3], "");
+    assert_eq!(lib_file_split[4], "godot_init!(init);");
 
-//     Ok(())
-// }
+    // 6. Assert that the Cargo.toml file of the library is what we expect.
+    let cargo_toml_string = read_to_string("platformer_modules/Cargo.toml")?;
+    let cargo_toml_split = cargo_toml_string.split("\n").collect::<Vec<&str>>();
+    assert_eq!(cargo_toml_split[0], "[package]");
+    assert_eq!(cargo_toml_split[1], "name = \"platformer_modules\"");
+    assert_eq!(cargo_toml_split[2], "version = \"0.1.0\"");
+    assert_eq!(cargo_toml_split[4], "edition = \"2018\"");
+    assert_eq!(cargo_toml_split[5], "");
+    assert_eq!(cargo_toml_split[6], "[lib]");
+    assert_eq!(cargo_toml_split[7], "crate-type = [\"cdylib\"]");
+    assert_eq!(cargo_toml_split[8], "");
+    assert_eq!(cargo_toml_split[9], "[dependencies]");
+    assert_eq!(cargo_toml_split[10], "gdnative = \"0.9.3\"");
 
-// #[test]
-// fn new_godot_project_has_rust_modules_directory() -> Result<(), Box<dyn Error>> {
-//     init_test();
+    cleanup_test_files();
 
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
+    Ok(())
+}
 
-//     cmd.assert().success();
+/// Creates a library and checks that all of the files in the Godot project
+/// exist and that their values are what they should be.
+#[test]
+fn new_create_godot_structure() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//     let rust_modules = Path::new("./platformer/rust_modules");
-//     assert_eq!(rust_modules.exists(), true);
+    // 1. Assert that the new command was successful.
+    let mut cmd = Command::new("cargo");
+    cmd.arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer");
+    cmd.assert().success();
 
-//     cleanup_test_files();
+    // 2. Assert that the dynamic library for the library exists in the Godot project's bin directory.
+    let dynamic_library_name = format!(
+        "platformer/bin/{}platformer_modules.{}",
+        BUILD_FILE_PREFIX, BUILD_FILE_TYPE
+    );
+    let plugin_dynamic_library_path = Path::new(&dynamic_library_name);
+    assert_eq!(plugin_dynamic_library_path.exists(), true);
 
-//     Ok(())
-// }
+    // 3. Assert that the `rust_modules` directory was created.
+    let rust_modules_path = Path::new("platformer/rust_modules");
+    assert_eq!(rust_modules_path.exists(), true);
 
-// #[test]
-// fn new_library_name_is_snake_case() -> Result<(), Box<dyn Error>> {
-//     init_test();
+    // 4. Assert that the gdnlib file exists.
+    let gdnlib_path = Path::new("platformer/platformer_modules.gdnlib");
+    assert_eq!(gdnlib_path.exists(), true);
 
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer-modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
+    // 5. Assert that the contents of the gdnlib file are what we expect.
+    let gdnlib_string = read_to_string(gdnlib_path)?;
+    let gdnlib_split = gdnlib_string.split("\r\n").collect::<Vec<&str>>();
+    assert_eq!(
+        gdnlib_split[9],
+        "OSX.64=\"res://bin/libplatformer_modules.dylib\""
+    );
+    assert_eq!(
+        gdnlib_split[10],
+        "Windows.64=\"res://bin/platformer_modules.dll\""
+    );
+    assert_eq!(
+        gdnlib_split[11],
+        "X11.64=\"res://bin/libplatformer_modules.so\""
+    );
 
-//     cmd.assert().success();
+    cleanup_test_files();
 
-//     let cargo_toml =
-//         read_to_string("platformer_modules/Cargo.toml").expect("Unable to read Cargo.toml");
-
-//     assert_eq!(cargo_toml.is_empty(), false);
-
-//     cleanup_test_files();
-
-//     Ok(())
-// }
-
-// #[test]
-// fn new_library_has_correct_project_json() -> Result<(), Box<dyn Error>> {
-//     init_test();
-
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
-
-//     cmd.assert().success();
-
-//     let config = read_to_string("platformer_modules/godot-rust-cli.json").expect("Unable to read config");
-//     let v: Value = serde_json::from_str(&config)?;
-
-//     let gdnlib_path = Path::new("platformer/platformer_modules.gdnlib");
-
-//     assert_eq!(v["godot_project_name"], "platformer");
-//     assert_eq!(v["modules"], json!([]));
-
-//     assert_eq!(gdnlib_path.exists(), true);
-
-//     cleanup_test_files();
-
-//     Ok(())
-// }
-
-// #[test]
-// fn new_has_initial_lib_file() -> Result<(), Box<dyn Error>> {
-//     init_test();
-
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
-
-//     cmd.assert().success();
-
-//     let lib = read_to_string("platformer_modules/src/lib.rs").expect("Unable to read lib file");
-//     let lib_split = lib.split("\n").collect::<Vec<&str>>();
-
-//     assert_eq!(lib_split[0], "use gdnative::prelude::*;");
-//     assert_eq!(lib_split[1], "");
-//     assert_eq!(lib_split[2], "fn init(handle: InitHandle) {}");
-//     assert_eq!(lib_split[3], "");
-//     assert_eq!(lib_split[4], "godot_init!(init);");
-
-//     cleanup_test_files();
-
-//     Ok(())
-// }
-
-// #[test]
-// fn new_godot_project_has_correct_gdnlib_file() -> Result<(), Box<dyn Error>> {
-//     init_test();
-
-//     let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//     cmd.arg("new")
-//         .arg("platformer_modules")
-//         .arg("platformer")
-//         .arg("--skip-build");
-
-//     cmd.assert().success();
-
-//     let gdnlib =
-//         read_to_string("platformer/platformer_modules.gdnlib").expect("Unable to read gdnlib");
-//     let gdnlib_split = gdnlib.split("\n").collect::<Vec<&str>>();
-
-//     assert_eq!(gdnlib_split[0].trim(), "[general]");
-//     assert_eq!(gdnlib_split[1].trim(), "");
-//     assert_eq!(gdnlib_split[2].trim(), "singleton=false");
-//     assert_eq!(gdnlib_split[3].trim(), "load_once=true");
-//     assert_eq!(gdnlib_split[4].trim(), "symbol_prefix=\"godot_\"");
-//     assert_eq!(gdnlib_split[5].trim(), "reloadable=true");
-//     assert_eq!(gdnlib_split[6].trim(), "");
-//     assert_eq!(gdnlib_split[7].trim(), "[entry]");
-//     assert_eq!(gdnlib_split[8].trim(), "");
-//     assert_eq!(
-//         gdnlib_split[9].trim(),
-//         "OSX.64=\"res://bin/libplatformer_modules.dylib\""
-//     );
-//     assert_eq!(
-//         gdnlib_split[10].trim(),
-//         "Windows.64=\"res://bin/platformer_modules.dll\""
-//     );
-//     assert_eq!(
-//         gdnlib_split[11].trim(),
-//         "X11.64=\"res://bin/libplatformer_modules.so\""
-//     );
-//     assert_eq!(gdnlib_split[12].trim(), "");
-//     assert_eq!(gdnlib_split[13].trim(), "[dependencies]");
-//     assert_eq!(gdnlib_split[14].trim(), "");
-//     assert_eq!(gdnlib_split[15].trim(), "OSX.64=[  ]");
-//     assert_eq!(gdnlib_split[16].trim(), "Windows.64=[  ]");
-//     assert_eq!(gdnlib_split[17].trim(), "X11.64=[  ]");
-
-//     cleanup_test_files();
-
-//     Ok(())
-// }
+    Ok(())
+}

@@ -1,46 +1,61 @@
-// use assert_cmd::prelude::*;
+use assert_cmd::prelude::*;
 
-// use std::env::set_current_dir;
-// use std::error::Error;
-// use std::path::Path;
-// use std::process::Command;
+use std::env::set_current_dir;
+use std::error::Error;
+use std::path::Path;
+use std::process::Command;
 
-// mod test_utilities;
-// use test_utilities::{cleanup_test_files, init_test, BUILD_FILE_NAME};
+mod test_utilities;
+use test_utilities::{cleanup_test_files, init_test, BUILD_FILE_PREFIX, BUILD_FILE_TYPE};
 
-// #[test]
-// fn build_should_create_dynamic_library_file_in_godot_project_bin_directory(
-// ) -> Result<(), Box<dyn Error>> {
-//   init_test();
+/// Creates a library and a module and runs the build command ands checks to
+/// make sure that the dynamic library was created and copied to the Godot
+/// project.
+#[test]
+fn build_godot_project() -> Result<(), Box<dyn Error>> {
+    init_test();
 
-//   let mut cmd = Command::cargo_bin("godot-rust-cli")?;
-//   cmd.arg("new").arg("platformer_modules").arg("platformer");
+    // 1. Assert that the new command was successful.
+    let mut cmd_new = Command::new("cargo");
+    cmd_new
+        .arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("platformer")
+        .arg("--skip-build");
+    cmd_new.assert().success();
 
-//   cmd.assert().success();
+    set_current_dir("platformer_modules")?;
 
-//   set_current_dir("platformer_modules").expect("Unable to change to library directory");
-//   Command::new("cargo")
-//     .arg("run")
-//     .arg("--manifest-path=../../Cargo.toml")
-//     .arg("create")
-//     .arg("Player")
-//     .output()
-//     .expect("Unable to execute cargo run");
-//   Command::new("cargo")
-//     .arg("run")
-//     .arg("--manifest-path=../../Cargo.toml")
-//     .arg("build")
-//     .output()
-//     .expect("Unable to execute cargo run");
+    // 2. Assert that the create command was successful.
+    let mut cmd_create = Command::new("cargo");
+    cmd_create
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("create")
+        .arg("Player");
+    cmd_create.assert().success();
 
-//   let build_file_name = format!("../platformer/bin/{}", BUILD_FILE_NAME);
-//   let build_file_path = Path::new(&build_file_name);
+    // 3. Assert that the build command was successful.
+    let mut cmd_build = Command::new("cargo");
+    cmd_build
+        .arg("run")
+        .arg("--manifest-path=../../Cargo.toml")
+        .arg("build");
+    cmd_build.assert().success();
 
-//   assert_eq!(build_file_path.exists(), true);
+    set_current_dir("../")?;
 
-//   set_current_dir("../").expect("Unable to change to parent directory");
+    // 4. Assert that the dynamic library was copied over.
+    let dynamic_library_name = format!(
+        "platformer/bin/{}platformer_modules.{}",
+        BUILD_FILE_PREFIX, BUILD_FILE_TYPE
+    );
+    let dynamic_library_path = Path::new(&dynamic_library_name);
+    assert_eq!(dynamic_library_path.exists(), true);
 
-//   cleanup_test_files();
+    cleanup_test_files();
 
-//   Ok(())
-// }
+    Ok(())
+}
