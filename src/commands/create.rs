@@ -12,29 +12,27 @@ use crate::lib_utils::add_module_to_lib;
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
 use crate::path_utils::exit_if_not_lib_dir;
 
-/// Creates a new Rust module inside the library.
+/// Creates a module by creating a module for it inside the library and a
+/// corresponding gdns file in the Godot project.
 ///
 /// # Arguments
 ///
-/// `name` - The name of the module to create. The module name should be PascalCase with examples including 'Player', 'Princess', 'Mob', etc.
+/// `name` - The name of the module to create as pascal case.
 pub fn create_module(name: &str) {
-    // Exit early if this command is not being run from the library directory.
     exit_if_not_lib_dir();
 
-    // We need the name of the module to create as snake case for file names
-    // and as pascal case for config.
     let module_name_snake_case = &name.to_case(Case::Snake);
     let module_name_pascal_case = &name.to_case(Case::Pascal);
 
-    // Get the parent directory since it always contains both the library and Godot project.
-    let current_dir = current_dir().expect("Unable to get current directory");
-    let parent_dir = current_dir.parent().expect("Unable to get parent dir");
+    let current_dir_path =
+        current_dir().expect("Unable to get current directory while creating the module");
+    let parent_dir_path = current_dir_path
+        .parent()
+        .expect("Unable to get the shared directory while creating the module");
 
-    // The mutable contents of the configuration file.
     let mut config = get_config_as_object();
 
-    // The path to the Godot project.
-    let path_to_godot_project = parent_dir.join(&config.godot_project_name);
+    let path_to_godot_project = parent_dir_path.join(&config.godot_project_name);
 
     log_styled_message_to_console("Creating module", ConsoleColors::WHITE);
 
@@ -46,21 +44,15 @@ pub fn create_module(name: &str) {
             ConsoleColors::RED,
         );
     }
-    // Create the `module.mod` file for the module in the library directory.
-    create_initial_module_file(
+
+    create_initial_module_file_in_library(
         module_name_snake_case,
         module_name_pascal_case,
         config.is_plugin,
     );
 
-    // Add the `mod` and turbofish handle to the `src/lib.rs` file in the
-    // library directory.
     add_module_to_lib(name, &config);
 
-    // Create the gdns file for the module in the Godot project directory.
-    // Note that this puts the gdns file in the `rust_modules` directory by
-    // default but since the modules reference the gdnlib file in the root
-    // of the Godot project, it can be moved anywhere.
     create_gdns_file_in_godot(
         module_name_snake_case,
         module_name_pascal_case,
@@ -68,20 +60,19 @@ pub fn create_module(name: &str) {
         &config,
     );
 
-    // Adds the module to the `modules` section of the config and saves it.
     add_module_to_config(name, &mut config);
 
     log_styled_message_to_console("Module created", ConsoleColors::GREEN);
 }
 
-/// Creates the initial module file with the template.
+/// Creates the initial file for the module in the library directory.
 ///
 /// # Arguments
 ///
-/// `module_name_snake_case` - The snake case version of the name of the module to create.
-/// `module_name_pascal_case` - The pascal case version of the name of the module to create.
-/// `is_plugin` - Indicates whether the module is a plugin or not.
-fn create_initial_module_file(
+/// `module_name_snake_case` - The snake case version of the module name.
+/// `module_name_pascal_case` - The pascal case version of the module name.
+/// `is_plugin` - Indicates whether the module is for plugin library or not.
+fn create_initial_module_file_in_library(
     module_name_snake_case: &str,
     module_name_pascal_case: &str,
     is_plugin: bool,
@@ -102,24 +93,26 @@ fn create_initial_module_file(
         format!("src/{}.rs", &module_name_snake_case),
         mod_template_with_module,
     )
-    .expect("Unable to write initial module file to library");
+    .expect("Unable to create the initial module file in the library while creating a module");
 }
 
-/// Creates the gdns file for the module and writes it to the Godot project
-/// directory.
+/// Creates the gdns file for the module from the template and places it either
+/// in the rust_modules directory at the root of the Godot project if it is a
+/// normal library or in the rust_modules directory at the root of the plugin
+/// directory in the Godot project if it is a plugin library.
 ///
-/// `module_name_snake_case` - The snake case version of the name of the module to create.
-/// `module_name_pascal_case` - The pascal case version of the name of the module to create.
-/// `godot_project_dir` - The path to the Godot project.
-/// `is_plugin` - Indicates whether the module is for a plugin for not.
+/// # Arguments
+///
+/// `module_name_snake_case` - The snake case version of the module name.
+/// `module_name_pascal_case` - The pascal case version of the module name.
+/// `godot_project_path` - The absolute path to the Godot project.
+/// `config` - The current configuration object.
 fn create_gdns_file_in_godot(
     module_name_snake_case: &str,
     module_name_pascal_case: &str,
     godot_project_dir: &PathBuf,
     config: &Config,
 ) {
-    // Create the path to the gdns file in the Godot project by joining the
-    // path to the Godot project with the default `rust_modules` directory.
     let gdns_file_name = format!("{}.gdns", &module_name_snake_case);
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
@@ -144,6 +137,8 @@ fn create_gdns_file_in_godot(
         godot_project_dir.join("rust_modules").join(gdns_file_name)
     };
 
+    // The path to the library is either the root directory of the plugin if it
+    // is a plugin or just the root of the Godot project otherwise.
     let gdns_library_path = if config.is_plugin {
         format!(
             "addons/{}/{}",
@@ -153,10 +148,13 @@ fn create_gdns_file_in_godot(
         format!("{}", &library_name_snake_case)
     };
 
+    // Replace the values in our template with the name of the library and the
+    // pascal version of the module name.
     let gdns_template = include_str!("../templates/gdns.txt");
     let gdns_with_module_name = gdns_template
         .replace("LIBRARY_PATH", &gdns_library_path)
         .replace("MODULE_NAME", &module_name_pascal_case);
 
-    write(gdns_path, gdns_with_module_name).expect("Unable to create module's gdns file");
+    write(gdns_path, gdns_with_module_name)
+        .expect("Unable to create module's gdns file while creating the module");
 }

@@ -103,7 +103,7 @@ fn main() {
         GodotRustCli::Destroy { name } => command_destroy::destroy_module(&name),
         GodotRustCli::Build { watch } => {
             if watch {
-                command_build::build_library_and_watch();
+                command_build::build_library_and_watch_for_changes();
             } else {
                 command_build::build_library();
             }

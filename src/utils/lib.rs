@@ -60,6 +60,8 @@ pub fn get_insert_location(
 
 /// Adds a module to the lib.rs file.
 ///
+/// # Arguments
+/// 
 /// `module_name` - The name of the module to add.
 /// `config` - The config to use.
 pub fn add_module_to_lib(module_name: &str, config: &Config) {
