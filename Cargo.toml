@@ -1,6 +1,6 @@
 [package]
 name = "godot-rust-cli"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Robert Corponoi <robertcorponoi@gmail.com>"]
 license = "MIT"
 description = "Provides an easy way to use Rust with your Godot project"
