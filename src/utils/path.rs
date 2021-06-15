@@ -20,17 +20,6 @@ pub fn exit_if_not_lib_dir() {
     }
 }
 
-/// Gets the name of the library from the current directory path.
-pub fn get_library_name_from_path() -> String {
-    let current_dir = std::env::current_dir().expect("Unable to get current directory");
-    let lib_name = current_dir.file_name().expect("Unable to get library name");
-    let lib_name_str = lib_name
-        .to_str()
-        .expect("Unable to convert library name to str");
-
-    return lib_name_str.to_string();
-}
-
 /// Returns the path to the dynamic libraries.
 pub fn get_dynamic_libraries_path() -> PathBuf {
     let curr_dir = current_dir().expect("Unable to get current directory");

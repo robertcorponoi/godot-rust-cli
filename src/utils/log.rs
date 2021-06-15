@@ -11,6 +11,8 @@ pub enum ConsoleColors {
 
 /// Logs a message to the console with the provided `ConsoleColor`.
 ///
+/// # Arguments
+///
 /// `message` - The message to log to the console.
 /// `color` - The `ConsoleColor` to use to style the message in the console.
 pub fn log_styled_message_to_console(message: &str, color: ConsoleColors) {

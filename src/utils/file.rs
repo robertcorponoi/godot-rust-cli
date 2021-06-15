@@ -3,6 +3,8 @@ use std::{fs::write, io::Result, path::Path, process::Command};
 
 /// Writes Rust code to a file and then runs `rustfmt` to format it.
 ///
+/// # Arguments
+/// 
 /// `path` - The path to the file to write the code to.
 /// `code` - The Rust code to write to the file.
 pub fn write_and_fmt<P: AsRef<Path>, S: ToString>(path: P, code: S) -> Result<()> {
@@ -15,6 +17,8 @@ pub fn write_and_fmt<P: AsRef<Path>, S: ToString>(path: P, code: S) -> Result<()
 
 /// Copies a file at the specified path to the destination path.
 ///
+/// # Arguments
+/// 
 /// `path_to_file_to_copy` - The path to the file to copy.
 /// `destination_path` - The destination path.
 pub fn copy_file_to_location(path_to_file_to_copy: &PathBuf, destination_path: &PathBuf) {
