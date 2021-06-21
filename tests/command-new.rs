@@ -62,14 +62,12 @@ fn new_create_library_structure() -> Result<(), Box<dyn Error>> {
     println!("{:?}", cargo_toml_split);
     assert_eq!(cargo_toml_split[0], "[package]");
     assert_eq!(cargo_toml_split[1], "name = \"platformer_modules\"");
-    assert_eq!(cargo_toml_split[2], "version = \"0.1.0\"");
-    assert_eq!(cargo_toml_split[4], "edition = \"2018\"");
-    assert_eq!(cargo_toml_split[5], "");
-    assert_eq!(cargo_toml_split[6], "[lib]");
-    assert_eq!(cargo_toml_split[7], "crate-type = [\"cdylib\"]");
-    assert_eq!(cargo_toml_split[8], "");
-    assert_eq!(cargo_toml_split[9], "[dependencies]");
-    assert_eq!(cargo_toml_split[10], "gdnative = \"0.9.3\"");
+
+    assert_eq!(cargo_toml_split[cargo_toml_split.len() - 6], "[lib]");
+    assert_eq!(cargo_toml_split[cargo_toml_split.len() - 5], "crate-type = [\"cdylib\"]");
+    assert_eq!(cargo_toml_split[cargo_toml_split.len() - 4], "");
+    assert_eq!(cargo_toml_split[cargo_toml_split.len() - 3], "[dependencies]");
+    assert_eq!(cargo_toml_split[cargo_toml_split.len() - 2], "gdnative = \"0.9.3\"");
 
     cleanup_test_files();
 
