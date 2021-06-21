@@ -1,5 +1,7 @@
+use assert_cmd::prelude::*;
 use std::fs::{remove_dir_all, remove_file};
 use std::path::Path;
+use std::process::Command;
 
 /// If the tests are being run on windows, then the build file is a dll file.
 #[cfg(target_os = "windows")]
@@ -135,4 +137,7 @@ pub fn init_test() {
     ensure_correct_dir();
     cleanup_test_files();
     create_godot_project();
+
+    std::env::set_var("CARGO_NAME", "");
+    std::env::set_var("CARGO_EMAIL", "");
 }
