@@ -59,7 +59,6 @@ fn new_create_library_structure() -> Result<(), Box<dyn Error>> {
         .split("\n")
         .map(|x| x.replace("\r", ""))
         .collect::<Vec<String>>();
-    println!("{:?}", cargo_toml_split);
     assert_eq!(cargo_toml_split[0], "[package]");
     assert_eq!(cargo_toml_split[1], "name = \"platformer_modules\"");
 
