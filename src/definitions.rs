@@ -19,7 +19,7 @@ pub struct CargoToml {
 pub struct CargoPackage {
   pub name: String,
   pub version: String,
-  pub authors: Vec<String>,
+  pub authors: Option<Vec<String>>,
   pub edition: String,
 }
 
