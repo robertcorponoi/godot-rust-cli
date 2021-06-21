@@ -138,6 +138,6 @@ pub fn init_test() {
     cleanup_test_files();
     create_godot_project();
 
-    std::env::set_var("CARGO_NAME", "");
-    std::env::set_var("CARGO_EMAIL", "");
+    std::env::set_var("CARGO_NAME", "TEST USER");
+    std::env::set_var("CARGO_EMAIL", "testuser@gmail.com");
 }
