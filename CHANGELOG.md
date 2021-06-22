@@ -1,4 +1,7 @@
-## 0.3.0 / 20201-06-15
+## 0.3.1 / 2020-06-21
+- Made the authors field in the parsed Cargo.toml to be optional to account for setups where the user might not have a name or email.
+
+## 0.3.0 / 2020-06-15
 - Fixed issue with Godot throwing an error because it couldn't find the dynamic library before a build was run.
 - Changed plugin architecture so now plugins are libraries in themselves with modules that are a part of that plugin.
 - Modules can now be moved around in the Godot project.
