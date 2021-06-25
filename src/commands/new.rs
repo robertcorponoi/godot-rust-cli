@@ -75,7 +75,7 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, plugin: bool, skip
         // Otherwise, in normal environments, we want to run the initial build
         // or else Godot will throw errors stating it can't find the dynamic
         // library for the project.
-        build_library();
+        build_library(false, false);
     }
 
     log_styled_message_to_console("library created", ConsoleColors::GREEN);

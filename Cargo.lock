@@ -212,6 +212,7 @@ dependencies = [
  "colored",
  "convert_case",
  "dunce",
+ "lazy_static",
  "notify",
  "predicates",
  "regex",

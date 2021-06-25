@@ -20,10 +20,22 @@ pub fn exit_if_not_lib_dir() {
     }
 }
 
-/// Returns the path to the dynamic libraries.
-pub fn get_dynamic_libraries_path() -> PathBuf {
-    let curr_dir = current_dir().expect("Unable to get current directory");
-    return Path::new(&curr_dir).join("target").join("debug");
+/// Returns the path to the directory that contains the dynamic library for the
+/// provided target.
+///
+/// # Arguments
+///
+/// `target` - The target to get the dynamic library path for.
+/// `is_release` - Indicates whether it is a release build or not.
+pub fn get_dynamic_library_directory_path(target: &str, is_release: bool) -> PathBuf {
+    let current_dir =
+        std::env::current_dir().expect("Unable to get the path to the current directory.");
+
+    let debug_or_release_dir_name = if is_release { "release" } else { "debug" };
+
+    return Path::new(&current_dir)
+        .join(&target)
+        .join(&debug_or_release_dir_name);
 }
 
 /// Returns the absolute path from a PathBuf.

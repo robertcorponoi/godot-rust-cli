@@ -1,24 +1,31 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs::read_to_string;
 use std::fs::write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use convert_case::{Case, Casing};
-
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
+use convert_case::{Case, Casing};
 
 /// The stucture of the configuration file.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     /// The name of the library.
+    /// Added v0.3.0
     pub name: String,
     /// The name of the directory of the Godot project.
+    /// Added v0.1.0
     pub godot_project_name: String,
     /// Indicates whether the library is for a plugin or not.
+    /// Added v0.3.0
     pub is_plugin: bool,
+    /// The <platform, target> to build the library for.
+    /// Added v0.4.0
+    pub targets: HashMap<String, String>,
     /// Tracks the modules created and destroyed through the cli.
+    /// Added v0.1.0
     pub modules: Vec<String>,
 }
 
@@ -44,6 +51,7 @@ pub fn create_initial_config(
         name: library_name,
         godot_project_name: godot_project_name,
         is_plugin: is_plugin,
+        targets: HashMap::new(),
         modules: vec![],
     };
     let config_as_json =
