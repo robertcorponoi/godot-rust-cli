@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env::current_dir;
-use std::fs::read_to_string;
 use std::fs::write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::exit;
 
 use crate::config_utils::Config;
@@ -15,7 +14,7 @@ use convert_case::{Case, Casing};
 pub struct Gdnlib {
     general: GdnlibGeneral,
     entry: HashMap<String, String>,
-    dependencies: HashMap<String, String>,
+    dependencies: HashMap<String, Vec<String>>,
 }
 
 /// The structure of the general section of the gdnlib file.
@@ -38,19 +37,19 @@ pub fn get_path_to_gdnlib_file(config: &Config) -> PathBuf {
         .expect("Unable to get parent directory while getting the path to the gndlib file.");
 
     let library_name_snake_case = &config.name.to_case(Case::Snake);
-    if config.is_plugin {
+    let gdnlib_directory: PathBuf = if config.is_plugin {
         return parent_dir
             .join(&config.godot_project_name)
             .join("addons")
             .join(library_name_snake_case)
-            .join("gdnative")
-            .join(format!("{}.gdnlib", library_name_snake_case));
+            .join("gdnative");
     } else {
-        return parent_dir
-            .join(&config.godot_project_name)
-            .join("gdnative")
-            .join(format!("{}.gdnlib", library_name_snake_case));
+        parent_dir.join(&config.godot_project_name).join("gdnative")
     };
+
+    std::fs::create_dir_all(&gdnlib_directory).expect("Unable to create dir for gdnlib file.");
+
+    return gdnlib_directory.join(format!("{}.gdnlib", library_name_snake_case));
 }
 
 /// Creates the initial gdnlib and saves it to the Godot project.
@@ -59,6 +58,11 @@ pub fn get_path_to_gdnlib_file(config: &Config) -> PathBuf {
 ///
 /// `config` - The configuration object.
 pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
+    let library_name_snake_case = &config.name.to_case(Case::Snake);
+
+    let entries_and_dependencies =
+        get_entries_and_dependencies_to_add_to_gdnlib(library_name_snake_case);
+
     let gdnlib_general = GdnlibGeneral {
         singleton: true,
         load_once: true,
@@ -67,8 +71,8 @@ pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
     };
     let mut gdnlib = Gdnlib {
         general: gdnlib_general,
-        entry: HashMap::new(),
-        dependencies: HashMap::new(),
+        entry: entries_and_dependencies.0,
+        dependencies: entries_and_dependencies.1,
     };
 
     save_gdnlib_to_file(config, &mut gdnlib);
@@ -76,16 +80,16 @@ pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
     return gdnlib;
 }
 
-/// Returns the config as an object that can be operated on.
-///
-/// `config` - The configuration object.
-pub fn get_gdnlib_as_object(config: &Config) -> Gdnlib {
-    let gdnlib_file_path = get_path_to_gdnlib_file(config);
-    let gdnlib_as_string =
-        read_to_string(gdnlib_file_path).expect("Unable to read gdnlib file to string.");
+// /// Returns the config as an object that can be operated on.
+// ///
+// /// `config` - The configuration object.
+// pub fn get_gdnlib_as_object(config: &Config) -> Gdnlib {
+//     let gdnlib_file_path = get_path_to_gdnlib_file(config);
+//     let gdnlib_as_string =
+//         read_to_string(gdnlib_file_path).expect("Unable to read gdnlib file to string.");
 
-    return toml::from_str(&gdnlib_as_string).expect("Unable to parse gdnlib file.");
-}
+//     return toml::from_str(&gdnlib_as_string).expect("Unable to parse gdnlib file.");
+// }
 
 /// Saves the gdnlib file to the Godot project directory.
 ///
@@ -97,7 +101,7 @@ pub fn save_gdnlib_to_file(config: &Config, gdnlib: &mut Gdnlib) {
     let gdnlib_file_path = get_path_to_gdnlib_file(config);
     let gdnlib_as_string =
         toml::to_string_pretty(&gdnlib).expect("Unable to convert gdnlib to string.");
-    match write(gdnlib_file_path, gdnlib_as_string) {
+    match write(gdnlib_file_path, gdnlib_as_string.replace("'", "\"")) {
         Ok(_) => (),
         Err(e) => {
             log_error_to_console(&e.to_string());
@@ -106,11 +110,45 @@ pub fn save_gdnlib_to_file(config: &Config, gdnlib: &mut Gdnlib) {
     }
 }
 
-/// Adds a target to the gdnlib and saves it.
+/// Returns the entries and dependencies that need to be added to the gdnlib
+/// object.
 ///
 /// # Arguments
 ///
-/// `target` - The target to add.
-/// `platform` - The platform that the target is for.
-/// `gdnlib` - The gdnlib object to add the target to.
-pub fn add_target_to_gdnlib(target: &str, platform: &str, gdnlib: &mut Gdnlib) {}
+/// `library_name_snake_case` - The snake case version of the library name.
+fn get_entries_and_dependencies_to_add_to_gdnlib(
+    library_name_snake_case: &str,
+) -> (HashMap<String, String>, HashMap<String, Vec<String>>) {
+    let osx_bin_path = format!(
+        "res://gdnative/bin/macos/lib{}.dylib",
+        library_name_snake_case
+    );
+    let windows_bin_path = format!("res://gdnative/bin/windows/{}.dll", library_name_snake_case);
+    let linux_bin_path = format!("res://gdnative/bin/linux/lib{}.so", library_name_snake_case);
+
+    let mut entries: HashMap<String, String> = HashMap::new();
+    entries.insert("OSX.64".to_owned(), osx_bin_path);
+    entries.insert("Windows.64".to_owned(), windows_bin_path);
+    entries.insert("X11.64".to_owned(), linux_bin_path);
+
+    // Entries for the Android OS.
+    let android_arm_bin_path = format!(
+        "res://gdnative/bin/android/aarch64-linux-android/lib{}.so",
+        library_name_snake_case
+    );
+    let android_64_bin_path = format!(
+        "res://gdnative/bin/android/x86_64-linux-android/lib{}.so",
+        library_name_snake_case
+    );
+    entries.insert("Android.arm64-v8a".to_owned(), android_arm_bin_path);
+    entries.insert("Android.x86_64".to_owned(), android_64_bin_path);
+
+    let mut deps: HashMap<String, Vec<String>> = HashMap::new();
+    deps.insert("OSX.64".to_owned(), vec![]);
+    deps.insert("Windows.64".to_owned(), vec![]);
+    deps.insert("X11.64".to_owned(), vec![]);
+    deps.insert("Android.arm64-v8a".to_owned(), vec![]);
+    deps.insert("Android.x86_64".to_owned(), vec![]);
+
+    return (entries, deps);
+}

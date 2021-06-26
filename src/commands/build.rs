@@ -3,7 +3,7 @@ use convert_case::{Case, Casing};
 use notify::{op, raw_watcher, RawEvent, RecursiveMode, Watcher};
 use std::fs::create_dir_all;
 use std::path::Path;
-use std::process::{exit, Command};
+use std::process::Command;
 use std::sync::mpsc::channel;
 
 use crate::config_utils::{get_config_as_object, Config};
@@ -11,70 +11,50 @@ use crate::file_utils::copy_file_to_location;
 use crate::log_utils::{
     log_error_to_console, log_info_to_console, log_success_to_console, log_version,
 };
-use crate::path_utils::get_dynamic_library_directory_path;
 use crate::time_utils::get_current_datetime_formatted;
 
-/// Runs the cargo build command to build the dynamic libraries and copy them
-/// over to the bin folder in the Godot project.
-///
-/// The default build command will build the library using the native target.
-/// For instance, if you're developing the library on 64-bit Windows then it
-/// will build for 64-bit Windows. Targets can be added using the --add-target
-/// command and these targets can built along with the native target by running
-/// godot-rust-cli build --all.
-///
-/// Check out the documentation on adding targets for more information about
-/// how to add more targets and how they work.
-///
-/// # Arguments
+/// Runs the command to build the library and then copies over the dynamic
+/// libraries to the Godot project.
 ///
 /// `is_release` - Indicates whether the build is a release build or not.
-/// `build_all_targets` - Indicates whether all of the targets should be built instead of just the native target.
-pub fn build_library(is_release: bool, build_all_targets: bool) {
+/// `build_all_platforms` - Indicates whether all platforms should be built or just the native one.
+pub fn build_library(is_release: bool, build_all_platforms: bool) {
     log_version();
-    log_info_to_console("build starting...");
+    log_info_to_console("[build] build starting...");
 
-    let current_dir = std::env::current_dir()
-        .expect("Unable to get current directory while building the library");
+    let current_dir = std::env::current_dir().expect("[build] Unable to get current directory.");
     let parent_dir = current_dir
         .parent()
-        .expect("Unable to get parent directory while building the library");
+        .expect("[build] Unable to get parent directory.");
 
     let config = get_config_as_object();
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
-    if config.targets.len() == 0 {
-        // If there's no targets left in the config, let the user know.
-        log_info_to_console("There are no targets to build for in the config. If you accidently deleted your native target then run godot-rust-cli reset-targets.");
-        exit(1);
-    }
-
-    // Build for the native target by default.
-    let native_target: &str = env!("TARGET");
-    build_for_target(
+    // Build for the native platform by default.
+    let native_platform = std::env::consts::OS.to_lowercase();
+    build_for_platform(
         parent_dir,
         &config,
         &library_name_snake_case,
-        &native_target,
+        &native_platform,
         is_release,
     );
 
-    // If the user wants to build for all of the targets, we run the
-    // `build_for_target` function for each target in the configuration.
-    if build_all_targets {
-        for (_platform, target) in &config.targets {
-            build_for_target(
+    // Build for all platforms if the flag is passed.
+    if build_all_platforms {
+        for platform in &config.platforms {
+            build_for_platform(
                 parent_dir,
                 &config,
                 &library_name_snake_case,
-                &target,
+                &platform.to_lowercase(),
                 is_release,
             );
         }
     }
 
     // Let the user know that the build is complete.
-    log_success_to_console("build complete");
+    log_success_to_console("[build] build complete");
 }
 
 /// Watches the src directory in the library for changes and rebuilds the
@@ -143,84 +123,101 @@ pub fn build_library_with_timestamp(is_release: bool, build_all_targets: bool) {
     ));
 }
 
-/// Builds the specified target using either the regular cargo build command if
-/// the build is for the native target or `cross` for cross platform builds.
+/// Builds the library for the specified platform. If the platform is not the
+/// user's native platform, then the `cross` command will be used.
 ///
 /// # Arguments
 ///
 /// `parent_dir` - The path to the parent directory of the library.
-/// `config` - A reference to the library's configuration.
+/// `config` - The library configuration.
 /// `library_name_snake_case` - The snake case version of the library name.
-/// `target` - The target to run the build for.
+/// `platform` - The platform to build for.
 /// `is_release` - Indicates whether the build is a release build or not.
-fn build_for_target(
+fn build_for_platform(
     parent_dir: &Path,
     config: &Config,
     library_name_snake_case: &str,
-    target: &str,
+    platform: &str,
     is_release: bool,
 ) {
-    let native_target: &str = env!("TARGET");
+    let native_platform = std::env::consts::OS.to_lowercase();
 
-    // The path to the directory that contains the dynamic library file.
-    let dynamic_library_directory = get_dynamic_library_directory_path(target, is_release);
+    // The path to the root directory of the dynamic library.
+    let current_dir = std::env::current_dir().expect(&format!(
+        "[build] Unable to get the path to the dynamic library for the platform {}",
+        &platform
+    ));
+    let debug_or_release_dir_name = if is_release { "release" } else { "debug" };
+    let target = get_platform_toolchain(platform.to_string());
+    let dynamic_library_root_dir = Path::new(&current_dir)
+        .join("target")
+        .join(target)
+        .join(&debug_or_release_dir_name);
+    // The prefix of the dynamic library file.
+    let dynamic_library_file_prefix = if platform == "windows" { "" } else { "lib" };
 
-    // The prefix of the dynamic library file name used to build the file name.
-    let dynamic_library_file_name_prefix = std::env::consts::DLL_PREFIX;
+    // The extension of the dynamic library file.
+    let dynamic_library_file_extension = if platform == "windows" {
+        "dll"
+    } else if platform == "macos" {
+        "dylib"
+    } else {
+        "so"
+    };
 
-    // The extension of the dynamic library file name used to build the file
-    // name.
-    let dynamic_library_file_name_extension = std::env::consts::DLL_SUFFIX;
-
-    // Build the name of the dynamic library based on the directory, the prefix,
-    // and then extension.
+    // The name of the dynamic library file putting together the prefix, the
+    // file name, and the extension.
     let dynamic_library_file_name = format!(
-        "{}{}{}",
-        &dynamic_library_file_name_prefix,
-        &library_name_snake_case,
-        &dynamic_library_file_name_extension
+        "{}{}.{}",
+        &dynamic_library_file_prefix, &library_name_snake_case, &dynamic_library_file_extension
     );
-    let dynamic_library_file_path = dynamic_library_directory.join(&dynamic_library_file_name);
 
-    // The base path to the Godot project's directory.
-    let godot_project_dir_path = parent_dir.join(&config.godot_project_name);
+    // The path to the dynamic library file putting together the root dir and
+    // the name of the file.
+    let dynamic_library_file_path = dynamic_library_root_dir.join(&dynamic_library_file_name);
 
-    // Let the user know that the build has officially started.
-    log_info_to_console(&format!("building for {}...", &target));
+    log_info_to_console(&format!("[build] building library for {}", &platform));
 
-    if target == native_target {
-        // If the target to build for is the native target, then we can just
-        // run the regular cargo build.
+    if platform == native_platform {
+        // If the platform to build for is the user's native platform, then we
+        // can use the cargo build command.
         run_cargo_build_command(is_release);
     } else {
-        // Otherwise we have to invoke the `cross` binary to build for the
-        // cross-platform target.
-        run_cross_build_command(&target, is_release);
+        // Otherwise we have to use the `cross` command to build the library
+        // for another platform.
+        run_cross_build_command(target, is_release);
     }
 
-    // Build the path to the bin folder in the Godot project where the dynamic
-    // library should be copied to.
+    // The path to directory in the Godot project where the dynamic library
+    // will be copied to.
     let godot_project_bin_path = if config.is_plugin {
-        godot_project_dir_path
+        parent_dir
+            .join(&config.godot_project_name)
             .join("addons")
             .join(&library_name_snake_case)
+            .join("gdnative")
             .join("bin")
+            .join(&platform)
     } else {
         parent_dir
             .join(&config.godot_project_name)
             .join("gdnative")
             .join("bin")
-            .join(&target)
+            .join(&platform)
     };
-    // Create the directory for the dynamic libraries in the Godot project if
-    // it doesn't exist already and copy the dynamic library to it.
-    create_dir_all(&godot_project_bin_path)
-        .expect("Unable to create bin directory in the Godot project");
 
+    // Make sure that the directory to the path above exists so that we can
+    // copy the dynamic library to it.
+    create_dir_all(&godot_project_bin_path)
+        .expect("[build] Unable to create the bin directory in the Godot project.");
+
+    // Copy the dynamic library from the library to the Godot project.
     copy_file_to_location(&dynamic_library_file_path, &godot_project_bin_path);
 
-    // Let the user know that the build for the target is complete.
-    log_success_to_console(&format!("build for target {} complete.", &target));
+    log_success_to_console(&format!(
+        "[build] build for platform {} complete.",
+        &platform
+    ));
 }
 
 /// Runs the cargo build command in the library directory to build the dynamic
@@ -245,6 +242,22 @@ fn run_cargo_build_command(is_release: bool) {
     cargo_build_command
         .status()
         .expect("Unable to run cargo build while building the library.");
+}
+
+/// Returns the target to build for depending on the platform.
+///
+/// # Arguments
+///
+/// `platform` - The platform to build for.
+fn get_platform_toolchain(platform: String) -> &'static str {
+    match platform.to_lowercase().as_str() {
+        "android.arm" => return "aarch64-linux-android",
+        "android" => return "x86_64-linux-android",
+        "windows" => return "x86_64-pc-windows-gnu",
+        "linux" => return "x86_64-unknown-linux-gnu",
+        "macos" => return "x86_64-apple-darwin",
+        _ => return "",
+    }
 }
 
 /// Runs the cross build command in the library directory to build the dynamic

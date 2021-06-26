@@ -10,8 +10,8 @@ mod command_create;
 mod command_destroy;
 #[path = "./commands/new.rs"]
 mod command_new;
-#[path = "./commands/target.rs"]
-mod command_target;
+#[path = "./commands/platform.rs"]
+mod command_platform;
 
 #[path = "./utils/config.rs"]
 mod config_utils;
@@ -175,46 +175,37 @@ enum GodotRustCli {
         build_all_targets: bool,
     },
 
-    /// Adds a new target to the list of targets that the library can be built
-    /// for. A target only needs to be added if you are trying to target
-    /// something other than your native target.
+    /// Adds a platform to the list of platforms that the library can be built
+    /// for. A platform only needs to be added if you are trying to build for
+    /// a platform that is not your native platform.
     ///
-    /// Targets are a more advanced feature so make sure to check the
+    /// Platforms are a more advanced feature so make sure to check the
     /// documentation on them specifically.
     ///
     /// # Examples
     ///
     /// ```
-    /// // Adding a 64 bit Linux target.
-    /// godot-rust-cli add-target "x86_64-unknown-linux-gnu - Linux.64"
-    /// ````
-    AddTarget {
-        /// The name of the target to add. Check the documentation on targets
-        /// to see the list of available targets that can be used. If the
-        /// target provided conflicts with the platform of another target, the
-        /// --overwrite flag must be used to overwrite the existing target.
+    /// // Adding Linux to the platforms that can be built for.
+    /// godot-rust-cli add-platform "Linux"
+    /// ```
+    AddPlatform {
+        /// The name of the platform to add. The list of supported platforms
+        /// can be found in the documentation on platforms.
         #[structopt()]
         name: String,
-
-        /// Indicates whether an identical target or a target for the same
-        /// platform as the specified target should be overwritten with the
-        /// specified target or not.
-        #[structopt(long, short)]
-        overwrite: bool,
     },
 
-    /// Removes a target from the list of targets that the library can be built
-    /// for.
+    /// Removes a platform from the list of platforms that the library can be
+    /// built for.
     ///
     /// # Examples
     ///
     /// ```
-    /// // Removing a 64 bit Linux target.
-    /// godot-rust-cli remove-target "x86_64-unknown-linux-gnu - Linux.64"
+    /// // Removing the previously added Linux platform.
+    /// godot-rust-cli remove-target "Linux"
     /// ```
-    RemoveTarget {
-        /// The name of the target to remove. This should be the same name that
-        /// was used when the target was added.
+    RemovePlatform {
+        /// The name of the platform to remove.
         #[structopt()]
         name: String,
     },
@@ -241,7 +232,7 @@ fn main() {
                 command_build::build_library(release, build_all_targets);
             }
         }
-        GodotRustCli::AddTarget { name, overwrite } => command_target::add_target(&name, overwrite),
-        GodotRustCli::RemoveTarget { name } => command_target::remove_target(&name),
+        GodotRustCli::AddPlatform { name } => command_platform::add_platform(&name),
+        GodotRustCli::RemovePlatform { name } => command_platform::remove_platform(&name),
     }
 }

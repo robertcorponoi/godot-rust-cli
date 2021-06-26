@@ -1,12 +1,11 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs::read_to_string;
 use std::fs::write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
+use crate::log_utils::{log_error_to_console, log_info_to_console};
 use convert_case::{Case, Casing};
 
 /// The stucture of the configuration file.
@@ -21,9 +20,9 @@ pub struct Config {
     /// Indicates whether the library is for a plugin or not.
     /// Added v0.3.0
     pub is_plugin: bool,
-    /// The <platform, target> to build the library for.
+    /// The platforms to build the library for.
     /// Added v0.4.0
-    pub targets: HashMap<String, String>,
+    pub platforms: Vec<String>,
     /// Tracks the modules created and destroyed through the cli.
     /// Added v0.1.0
     pub modules: Vec<String>,
@@ -51,7 +50,7 @@ pub fn create_initial_config(
         name: library_name,
         godot_project_name: godot_project_name,
         is_plugin: is_plugin,
-        targets: HashMap::new(),
+        platforms: vec![],
         modules: vec![],
     };
     let config_as_json =
@@ -84,7 +83,7 @@ pub fn save_config_to_file(config: &mut Config) {
     match write(config_file_path, config_as_string) {
         Ok(_) => (),
         Err(e) => {
-            log_styled_message_to_console(&e.to_string(), ConsoleColors::RED);
+            log_error_to_console(&e.to_string());
             exit(1);
         }
     }
@@ -132,7 +131,7 @@ pub fn remove_module_from_config_if_exists(module_name: &str, config: &mut Confi
     let module_exists_in_config = is_module_in_config(&module_name, config);
 
     if !module_exists_in_config {
-        log_styled_message_to_console("The module to remove doesn't exist", ConsoleColors::RED);
+        log_info_to_console("The module to remove doesn't exist.");
         exit(1);
     }
 
@@ -142,6 +141,60 @@ pub fn remove_module_from_config_if_exists(module_name: &str, config: &mut Confi
         .position(|x| *x == module_name)
         .unwrap();
     config.modules.remove(index);
+
+    save_config_to_file(config);
+}
+
+/// Adds a platform to the config file if it doesn't already exist.
+///
+/// # Arguments
+///
+/// `platform` - The platform to add to the configuration file.
+/// `config` - Can be passed if the config is already in memory.
+pub fn add_platform_to_config(platform: &str, config: &mut Config) {
+    if is_platform_in_config(platform, config) {
+        log_info_to_console(&format!(
+            "[add-platform] The platform {} is already in the config.",
+            &platform
+        ));
+        exit(1);
+    }
+    config.platforms.push(platform.to_lowercase());
+    save_config_to_file(config);
+}
+
+/// Indicates whether a platform was added to the config or not.
+///
+/// # Arguments
+///
+/// `platform` - The platform to check if exists or not.
+/// `config` - The configuration file.
+pub fn is_platform_in_config(platform: &str, config: &mut Config) -> bool {
+    return config.platforms.iter().any(|i| i == platform);
+}
+
+/// Removes a platform from the config file if it exists.
+///
+/// # Arguments
+///
+/// `platform` - The platform to remove from the config file.
+/// `config` - The configuration file.
+pub fn remove_platform_from_config_if_exists(platform: &str, config: &mut Config) {
+    if !is_platform_in_config(platform, config) {
+        log_info_to_console(
+            &format!(
+            "[remove-platform] The platform {} can't be removed because doesn't exist in the config.",
+            &platform
+        ));
+        exit(1);
+    }
+
+    let index = config
+        .platforms
+        .iter()
+        .position(|x| *x == platform.to_lowercase())
+        .unwrap();
+    config.platforms.remove(index);
 
     save_config_to_file(config);
 }

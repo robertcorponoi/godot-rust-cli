@@ -10,6 +10,7 @@ use crate::command_create::create_module;
 use crate::config_utils::{create_initial_config, Config};
 use crate::definitions::CargoToml;
 use crate::file_utils::write_and_fmt;
+use crate::gdnlib_utils::create_initial_gdnlib;
 use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
 use crate::path_utils::get_absolute_path;
 
@@ -62,11 +63,7 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, plugin: bool, skip
         &config,
     );
 
-    create_gdnlib_in_godot(
-        &library_name_normalized,
-        &godot_project_absolute_path,
-        &config,
-    );
+    create_initial_gdnlib(&config);
 
     // For testing we skip building the library so that tests won't take a
     // long time to run. We already test building on its own so it isn't
@@ -195,43 +192,6 @@ fn create_rust_modules_dir_in_godot(
             exit(1);
         }
     }
-}
-
-/// Creates the gdnlib file in the Godot project directory.
-///
-/// # Arguments
-///
-/// `library_name` - The name of the library to create.
-/// `godot_project_absolute_path` - The absolute path to the Godot project.
-/// `config` - The library's config.
-fn create_gdnlib_in_godot(
-    library_name: &str,
-    godot_project_absolute_path: &PathBuf,
-    config: &Config,
-) {
-    let gdnlib_template = include_str!("../templates/gdnlib.txt");
-
-    let dynamic_library_path = if config.is_plugin {
-        format!("addons/{}/bin", &config.name.to_case(Case::Snake))
-    } else {
-        "bin".to_owned()
-    };
-    let gdnlib_with_library_path = gdnlib_template.replace("LIBRARY_PATH", &dynamic_library_path);
-
-    let gdnlib_with_library_name = gdnlib_with_library_path.replace("LIBRARY_NAME", &library_name);
-    let gdnlib_filename = format!("{}.gdnlib", &library_name);
-
-    let gdnlib_path = if config.is_plugin {
-        godot_project_absolute_path
-            .join("addons")
-            .join(&config.name.to_case(Case::Snake))
-            .join(&gdnlib_filename)
-    } else {
-        godot_project_absolute_path.join(&gdnlib_filename)
-    };
-
-    write(&gdnlib_path, gdnlib_with_library_name)
-        .expect("Unable to create gdnlib file in the Godot project while creating library");
 }
 
 /// Creates the initial `lib.rs` file in the library directory.
