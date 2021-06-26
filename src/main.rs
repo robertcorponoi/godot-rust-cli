@@ -132,14 +132,14 @@ enum GodotRustCli {
     /// The --release flag can be passed to have godot-rust-cli create a
     /// release build for the library instead of a debug build.
     ///
-    /// The --build-all-targets flag can be passed to have godot-rust-cli run a
-    /// build for every target in the config file. By default, a build will
+    /// The --build-all-platforms flag can be passed to have godot-rust-cli run a
+    /// build for every platform in the config file. By default, a build will
     /// only be created for the native platform.
     ///
     /// # Examples
     ///
     /// ```
-    /// // Running the default build for the native target.
+    /// // Running the default build for the native platform.
     /// godot-rust-cli build
     /// ```
     ///
@@ -155,8 +155,8 @@ enum GodotRustCli {
     /// ```
     ///
     /// ```
-    /// // Building for all of the targets in the config file.
-    /// godot-rust-cli build --build-all-targets
+    /// // Building for all of the platforms in the config file.
+    /// godot-rust-cli build --build-all-platforms
     /// ```
     Build {
         /// Indicates whether components should be watched for changes and be
@@ -168,11 +168,13 @@ enum GodotRustCli {
         #[structopt(long, short)]
         release: bool,
 
-        /// Indicates whether all of the targets defined in the config should
-        /// be built or not. By default, if this is not provided, then just
-        /// the target for the native platform will be build.
+        /// Indicates whether godot-rust-cli should build for all of the
+        /// platforms defined in the configuration or not.
+        ///
+        /// By default, if this flag is not passed, just the build for the
+        /// user's native platform will be run.
         #[structopt(long, short)]
-        build_all_targets: bool,
+        build_all_platforms: bool,
     },
 
     /// Adds a platform to the list of platforms that the library can be built
@@ -202,7 +204,7 @@ enum GodotRustCli {
     ///
     /// ```
     /// // Removing the previously added Linux platform.
-    /// godot-rust-cli remove-target "Linux"
+    /// godot-rust-cli remove-platform "Linux"
     /// ```
     RemovePlatform {
         /// The name of the platform to remove.
@@ -224,12 +226,12 @@ fn main() {
         GodotRustCli::Build {
             watch,
             release,
-            build_all_targets,
+            build_all_platforms,
         } => {
             if watch {
-                command_build::build_library_and_watch_for_changes(release, build_all_targets);
+                command_build::build_library_and_watch_for_changes(release, build_all_platforms);
             } else {
-                command_build::build_library(release, build_all_targets);
+                command_build::build_library(release, build_all_platforms);
             }
         }
         GodotRustCli::AddPlatform { name } => command_platform::add_platform(&name),
