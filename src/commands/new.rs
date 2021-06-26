@@ -57,7 +57,7 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, plugin: bool, skip
         create_plugin_structure_in_godot(&name, &godot_project_absolute_path);
     }
 
-    create_rust_modules_dir_in_godot(
+    create_gdnative_dir_in_godot(
         &library_name_normalized,
         &godot_project_absolute_path,
         &config,
@@ -162,28 +162,28 @@ fn create_cargo_library(library_name: &String) {
     }
 }
 
-/// Creates the `rust_modules` directory within the Godot project.
+/// Creates the gdnative directory within the Godot project.
 ///
 /// # Arguments
 ///
 /// `library_name_snake_case` - The snake case version of the library name.
 /// `godot_project_absolute_path` - The absolute path to the Godot project.
 /// `config` - The config.
-fn create_rust_modules_dir_in_godot(
+fn create_gdnative_dir_in_godot(
     library_name_snake_case: &str,
     godot_project_absolute_path: &PathBuf,
     config: &Config,
 ) {
-    let rust_modules_path = if config.is_plugin {
+    let gdnative_path = if config.is_plugin {
         godot_project_absolute_path
             .join("addons")
             .join(&library_name_snake_case)
-            .join("rust_modules")
+            .join("gdnative")
     } else {
-        godot_project_absolute_path.join("rust_modules")
+        godot_project_absolute_path.join("gdnative")
     };
 
-    match create_dir_all(&rust_modules_path) {
+    match create_dir_all(&gdnative_path) {
         Ok(_) => (),
         Err(e) => {
             // If there was a problem creating the directory then we print the error
