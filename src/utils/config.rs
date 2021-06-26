@@ -5,7 +5,7 @@ use std::fs::write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use crate::log_utils::{log_error_to_console, log_info_to_console};
+use crate::log_utils::{log_error_to_console, log_info_to_console, log_success_to_console};
 use convert_case::{Case, Casing};
 
 /// The stucture of the configuration file.
@@ -152,15 +152,22 @@ pub fn remove_module_from_config_if_exists(module_name: &str, config: &mut Confi
 /// `platform` - The platform to add to the configuration file.
 /// `config` - Can be passed if the config is already in memory.
 pub fn add_platform_to_config(platform: &str, config: &mut Config) {
-    if is_platform_in_config(platform, config) {
+    let platform_lowercase = platform.to_lowercase();
+
+    if is_platform_in_config(&platform_lowercase, config) {
         log_info_to_console(&format!(
-            "[add-platform] The platform {} is already in the config.",
+            "[add-platform] {} is already in the config.",
             &platform
         ));
         exit(1);
     }
-    config.platforms.push(platform.to_lowercase());
+    config.platforms.push(platform_lowercase);
     save_config_to_file(config);
+
+    log_success_to_console(&format!(
+        "[add-platform] Added {} to the config.",
+        &platform
+    ));
 }
 
 /// Indicates whether a platform was added to the config or not.
@@ -180,10 +187,11 @@ pub fn is_platform_in_config(platform: &str, config: &mut Config) -> bool {
 /// `platform` - The platform to remove from the config file.
 /// `config` - The configuration file.
 pub fn remove_platform_from_config_if_exists(platform: &str, config: &mut Config) {
-    if !is_platform_in_config(platform, config) {
-        log_info_to_console(
-            &format!(
-            "[remove-platform] The platform {} can't be removed because doesn't exist in the config.",
+    let platform_lowercase = platform.to_lowercase();
+
+    if !is_platform_in_config(&platform_lowercase, config) {
+        log_info_to_console(&format!(
+            "[remove-platform] {} can't be removed because doesn't exist in the config.",
             &platform
         ));
         exit(1);
@@ -192,9 +200,14 @@ pub fn remove_platform_from_config_if_exists(platform: &str, config: &mut Config
     let index = config
         .platforms
         .iter()
-        .position(|x| *x == platform.to_lowercase())
+        .position(|x| *x == platform_lowercase)
         .unwrap();
     config.platforms.remove(index);
 
     save_config_to_file(config);
+
+    log_success_to_console(&format!(
+        "[remove-platform] {} removed from the config.",
+        &platform
+    ));
 }
