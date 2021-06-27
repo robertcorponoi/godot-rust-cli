@@ -15,6 +15,8 @@ mod command_platform;
 
 #[path = "./utils/config.rs"]
 mod config_utils;
+#[path = "./utils/cross.rs"]
+mod cross_utils;
 #[path = "./utils/file.rs"]
 mod file_utils;
 #[path = "./utils/gdnlib.rs"]
@@ -174,7 +176,7 @@ enum GodotRustCli {
         /// By default, if this flag is not passed, just the build for the
         /// user's native platform will be run.
         #[structopt(long, short)]
-        build_all_platforms: bool,
+        all: bool,
     },
 
     /// Adds a platform to the list of platforms that the library can be built
@@ -226,12 +228,12 @@ fn main() {
         GodotRustCli::Build {
             watch,
             release,
-            build_all_platforms,
+            all,
         } => {
             if watch {
-                command_build::build_library_and_watch_for_changes(release, build_all_platforms);
+                command_build::build_library_and_watch_for_changes(release, all);
             } else {
-                command_build::build_library(release, build_all_platforms);
+                command_build::build_library(release, all);
             }
         }
         GodotRustCli::AddPlatform { name } => command_platform::add_platform(&name),

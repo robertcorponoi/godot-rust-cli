@@ -1,6 +1,7 @@
 use crate::config_utils::{
     add_platform_to_config, get_config_as_object, remove_platform_from_config_if_exists,
 };
+use crate::cross_utils::add_image_override_if_necessary;
 use crate::log_utils::log_error_to_console;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -37,9 +38,14 @@ use std::process::exit;
 ///
 /// `platform` - The platform to compile for.
 pub fn add_platform(platform: &str) {
-    if VALID_PLATFORMS.contains_key(&platform) {
+    let platform_normalized = platform.to_lowercase();
+
+    if VALID_PLATFORMS.contains_key(&platform_normalized.as_str()) {
         let mut config = get_config_as_object();
-        add_platform_to_config(platform, &mut config);
+        // Add the platform to the `platforms` array in the config.
+        add_platform_to_config(&platform_normalized, &mut config);
+
+        add_image_override_if_necessary(&platform_normalized);
     } else {
         log_error_to_console(&format!("The target {} isn't a valid target. Please file an issue in the GitHub or Discord if this is incorrect.", &platform));
         exit(1);
@@ -59,11 +65,11 @@ pub fn remove_platform(platform: &str) {
 lazy_static! {
     static ref VALID_PLATFORMS: HashMap<&'static str, &'static str> = {
         let mut m = HashMap::new();
-        m.insert("Android.Arm", "aarch64-linux-android");
-        m.insert("Android", "x86_64-linux-android");
-        m.insert("Windows", "x86_64-pc-windows-gnu");
-        m.insert("Linux", "x86_64-unknown-linux-gnu");
-        m.insert("MacOS", "x86_64-apple-darwin");
+        m.insert("android.arm", "aarch64-linux-android");
+        m.insert("android", "x86_64-linux-android");
+        m.insert("windows", "x86_64-pc-windows-gnu");
+        m.insert("linux", "x86_64-unknown-linux-gnu");
+        // m.insert("macos", "x86_64-apple-darwin");
         m
     };
 }
