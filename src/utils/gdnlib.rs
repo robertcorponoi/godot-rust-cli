@@ -64,7 +64,7 @@ pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
         get_entries_and_dependencies_to_add_to_gdnlib(library_name_snake_case);
 
     let gdnlib_general = GdnlibGeneral {
-        singleton: true,
+        singleton: false,
         load_once: true,
         symbol_prefix: "godot_".to_string(),
         reloadable: true,
