@@ -1,4 +1,5 @@
 use std::env::current_dir;
+use std::fs::create_dir_all;
 use std::fs::write;
 use std::path::PathBuf;
 
@@ -116,15 +117,16 @@ fn create_gdns_file_in_godot(
     let gdns_file_name = format!("{}.gdns", &module_name_snake_case);
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
-    let gdns_path: PathBuf = if config.is_plugin {
+    let gdns_dir: PathBuf = if config.is_plugin {
         godot_project_dir
             .join("addons")
             .join(&library_name_snake_case)
             .join("gdnative")
-            .join(gdns_file_name)
     } else {
-        godot_project_dir.join("gdnative").join(gdns_file_name)
+        godot_project_dir.join("gdnative")
     };
+
+    create_dir_all(&gdns_dir).expect("Unable to create directory for module file in Godot.");
 
     // The path to the gdnlib file in the Godot project.
     let gdnlib_path = if config.is_plugin {
@@ -143,6 +145,6 @@ fn create_gdns_file_in_godot(
         .replace("GDNLIB_PATH", &gdnlib_path)
         .replace("MODULE_NAME", &module_name_pascal_case);
 
-    write(gdns_path, gdns_with_module_name)
+    write(gdns_dir.join(&gdns_file_name), gdns_with_module_name)
         .expect("Unable to create module's gdns file while creating the module");
 }

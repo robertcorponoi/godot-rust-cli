@@ -80,22 +80,31 @@ pub fn add_image_override_if_necessary(platform: &str) {
     add_cross_config_image_override(platform);
 
     // Copy the windows override docker file to the library directory.
-    create_docker_dir_if_not_exists();
+    create_docker_dir_if_not_exists(platform);
     copy_platform_dockerfile_to_library_if_needed(platform);
 
     // Build the docker image so it can be used by cross.
     build_docker_image_for_platform(platform);
 }
 
-/// Creates docker directory in the library if it doesn't exist.
-fn create_docker_dir_if_not_exists() {
+/// Creates docker directory in the library if it needs to be created.
+///
+/// # Argument
+///
+/// `platform` - The platform being added.
+fn create_docker_dir_if_not_exists(platform: &str) {
     let current_dir_path = current_dir()
         .expect("Unable to get current directory while creating the docker directory.");
     let docker_dir_path = current_dir_path.join("docker");
 
-    if !docker_dir_path.exists() {
-        std::fs::create_dir(current_dir_path.join("docker"))
-            .expect("Unable to create docker directory in library.");
+    match platform {
+        "windows" => {
+            if !docker_dir_path.exists() {
+                std::fs::create_dir(current_dir_path.join("docker"))
+                    .expect("Unable to create docker directory in library.");
+            }
+        }
+        _ => (),
     }
 }
 

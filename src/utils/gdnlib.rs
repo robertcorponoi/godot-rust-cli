@@ -38,11 +38,11 @@ pub fn get_path_to_gdnlib_file(config: &Config) -> PathBuf {
 
     let library_name_snake_case = &config.name.to_case(Case::Snake);
     let gdnlib_directory: PathBuf = if config.is_plugin {
-        return parent_dir
+        parent_dir
             .join(&config.godot_project_name)
             .join("addons")
             .join(library_name_snake_case)
-            .join("gdnative");
+            .join("gdnative")
     } else {
         parent_dir.join(&config.godot_project_name).join("gdnative")
     };
@@ -61,7 +61,7 @@ pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
     let entries_and_dependencies =
-        get_entries_and_dependencies_to_add_to_gdnlib(library_name_snake_case);
+        get_entries_and_dependencies_to_add_to_gdnlib(library_name_snake_case, config.is_plugin);
 
     let gdnlib_general = GdnlibGeneral {
         singleton: false,
@@ -101,7 +101,7 @@ pub fn save_gdnlib_to_file(config: &Config, gdnlib: &mut Gdnlib) {
     let gdnlib_file_path = get_path_to_gdnlib_file(config);
     let gdnlib_as_string =
         toml::to_string_pretty(&gdnlib).expect("Unable to convert gdnlib to string.");
-    match write(gdnlib_file_path, gdnlib_as_string.replace("'", "\"")) {
+    match write(&gdnlib_file_path, gdnlib_as_string.replace("'", "\"")) {
         Ok(_) => (),
         Err(e) => {
             log_error_to_console(&e.to_string());
@@ -116,15 +116,29 @@ pub fn save_gdnlib_to_file(config: &Config, gdnlib: &mut Gdnlib) {
 /// # Arguments
 ///
 /// `library_name_snake_case` - The snake case version of the library name.
+/// `is_plugin` - Indicates whether the library is for a plugin or not.
 fn get_entries_and_dependencies_to_add_to_gdnlib(
     library_name_snake_case: &str,
+    is_plugin: bool,
 ) -> (HashMap<String, String>, HashMap<String, Vec<String>>) {
+    let base_path = if is_plugin {
+        format!("res://addons/{}", library_name_snake_case)
+    } else {
+        "res://".to_owned()
+    };
+
     let osx_bin_path = format!(
-        "res://gdnative/bin/macos/lib{}.dylib",
-        library_name_snake_case
+        "{}/gdnative/bin/macos/lib{}.dylib",
+        base_path, library_name_snake_case
     );
-    let windows_bin_path = format!("res://gdnative/bin/windows/{}.dll", library_name_snake_case);
-    let linux_bin_path = format!("res://gdnative/bin/linux/lib{}.so", library_name_snake_case);
+    let windows_bin_path = format!(
+        "{}/gdnative/bin/windows/{}.dll",
+        base_path, library_name_snake_case
+    );
+    let linux_bin_path = format!(
+        "{}/gdnative/bin/linux/lib{}.so",
+        base_path, library_name_snake_case
+    );
 
     let mut entries: HashMap<String, String> = HashMap::new();
     entries.insert("OSX.64".to_owned(), osx_bin_path);
@@ -133,12 +147,12 @@ fn get_entries_and_dependencies_to_add_to_gdnlib(
 
     // Entries for the Android OS.
     let android_arm_bin_path = format!(
-        "res://gdnative/bin/android/aarch64-linux-android/lib{}.so",
-        library_name_snake_case
+        "{}/gdnative/bin/android/aarch64-linux-android/lib{}.so",
+        base_path, library_name_snake_case
     );
     let android_64_bin_path = format!(
-        "res://gdnative/bin/android/x86_64-linux-android/lib{}.so",
-        library_name_snake_case
+        "{}/gdnative/bin/android/x86_64-linux-android/lib{}.so",
+        base_path, library_name_snake_case
     );
     entries.insert("Android.arm64-v8a".to_owned(), android_arm_bin_path);
     entries.insert("Android.x86_64".to_owned(), android_64_bin_path);
