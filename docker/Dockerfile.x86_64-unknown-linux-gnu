@@ -1,6 +1,6 @@
 FROM rustembedded/cross:x86_64-unknown-linux-gnu
 
-RUN apt-get update && \
+RUN dpkg --add-architecture x86_64 && apt-get update && \
     apt-get install --assume-yes --no-install-recommends \
     libclang-dev \
     clang
