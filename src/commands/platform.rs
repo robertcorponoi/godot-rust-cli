@@ -1,7 +1,7 @@
 use crate::config_utils::{
     add_platform_to_config, get_config_as_object, remove_platform_from_config_if_exists,
 };
-use crate::cross_utils::add_image_override_if_necessary;
+use crate::cross_utils::add_image_override_for_platform;
 use crate::log_utils::log_error_to_console;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -45,7 +45,7 @@ pub fn add_platform(platform: &str) {
         // Add the platform to the `platforms` array in the config.
         add_platform_to_config(&platform_normalized, &mut config);
 
-        add_image_override_if_necessary(&platform_normalized);
+        add_image_override_for_platform(&platform_normalized);
     } else {
         log_error_to_console(&format!("The target {} isn't a valid target. Please file an issue in the GitHub or Discord if this is incorrect.", &platform));
         exit(1);
