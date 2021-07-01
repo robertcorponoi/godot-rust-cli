@@ -65,10 +65,10 @@ pub fn remove_platform(platform: &str) {
 lazy_static! {
     static ref VALID_PLATFORMS: HashMap<&'static str, &'static str> = {
         let mut m = HashMap::new();
-        m.insert("android.arm", "aarch64-linux-android");
-        m.insert("android", "x86_64-linux-android");
+        // m.insert("android.arm", "aarch64-linux-android");
+        // m.insert("android", "x86_64-linux-android");
         m.insert("windows", "x86_64-pc-windows-gnu");
-        m.insert("linux", "x86_64-unknown-linux-gnu");
+        // m.insert("linux", "x86_64-unknown-linux-gnu");
         // m.insert("macos", "x86_64-apple-darwin");
         m
     };
