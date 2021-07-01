@@ -2,5 +2,6 @@ FROM rustembedded/cross:x86_64-unknown-linux-gnu
 
 RUN yum update -y && \
     yum install -y \
-    libclang-dev \
-    clang
+    centos-release-scl \
+    llvm-toolset-7 && \
+    scl enable llvm-toolset-7 bash
