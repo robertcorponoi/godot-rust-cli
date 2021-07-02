@@ -11,9 +11,9 @@ pub struct Cross {
     /// The override for the windows docker image.
     #[serde(rename = "target.x86_64-pc-windows-gnu")]
     windows: Option<CrossImage>,
-    /// The override for the linux docker image.
-    #[serde(rename = "target.x86_64-unknown-linux-gnu")]
-    linux: Option<CrossImage>,
+    // /// The override for the linux docker image.
+    // #[serde(rename = "target.x86_64-unknown-linux-gnu")]
+    // linux: Option<CrossImage>,
 }
 
 /// Describes the structure of an image definition in the cross config.
@@ -39,7 +39,7 @@ pub fn create_cross_config_file_if_not_exists() {
     if !cross_config_path.exists() {
         let cross = Cross {
             windows: None,
-            linux: None,
+            // linux: None,
         };
 
         save_cross_config_to_file(&cross);
@@ -128,25 +128,32 @@ fn copy_platform_dockerfile_to_library(platform: &str) {
     // Get the contents of the docker file that needs to be copied from the
     // cli's local docker directory.
     let docker_file_source = match platform {
-        "windows" => include_str!("../../docker/Dockerfile.x86_64-pc-windows-gnu"),
-        "linux" => include_str!("../../docker/Dockerfile.x86_64-unknown-linux-gnu"),
-        _ => include_str!("../../docker/Dockerfile.x86_64-unknown-linux-gnu"),
+        "windows" => Some(include_str!(
+            "../../docker/Dockerfile.x86_64-pc-windows-gnu"
+        )),
+        // "linux" => Some(include_str!("../../docker/Dockerfile.x86_64-unknown-linux-gnu")),
+        _ => None,
     };
 
     // Set the name of the docker file to use when copying the contents over to
     // the library's docker directory.
     let docker_file_name = match platform {
-        "windows" => "Dockerfile.x86_64-pc-windows-gnu",
-        "linux" => "Dockerfile.x86_64-unknown-linux-gnu",
-        _ => "Dockerfile.x86_64-unknown-linux-gnu",
+        "windows" => Some("Dockerfile.x86_64-pc-windows-gnu"),
+        // "linux" => Some("Dockerfile.x86_64-unknown-linux-gnu"),
+        _ => None,
     };
 
-    // The directory to copy the contents of the docker file over to.
-    let docker_file_destination = current_dir.join("docker").join(&docker_file_name);
+    match (docker_file_source, docker_file_name) {
+        (Some(docker_file_source_value), Some(docker_file_name_value)) => {
+            // The directory to copy the contents of the docker file over to.
+            let docker_file_destination = current_dir.join("docker").join(&docker_file_name_value);
 
-    std::fs::write(docker_file_destination, docker_file_source)
-        .expect("Unable to copy platform dockerfile to library.");
-    log_info_to_console("[cross] Copied docker image to library directory.");
+            std::fs::write(docker_file_destination, docker_file_source_value)
+                .expect("Unable to copy platform dockerfile to library.");
+            log_info_to_console("[cross] Copied docker image to library directory.");
+        }
+        _ => (),
+    }
 }
 
 /// Adds an image that should be used over the default cross image in the cross
@@ -156,13 +163,6 @@ fn copy_platform_dockerfile_to_library(platform: &str) {
 ///
 /// `platform` - The platform to add the image for.
 fn add_docker_image_to_cross_config(platform: &str) {
-    // Get the name of the image to use instead of the default image.
-    let image_name = match platform {
-        "windows" => "godot-rust-cli-platform-windows:v2",
-        "linux" => "godot-rust-cli-platform-linux:v2",
-        _ => "godot-rust-cli-platform-linux:v2",
-    };
-
     // Get the configuration so that we can save the image override to it.
     let mut cross_config = get_cross_config_as_object();
 
@@ -171,16 +171,16 @@ fn add_docker_image_to_cross_config(platform: &str) {
     match platform {
         "windows" => {
             let cross_windows = CrossImage {
-                image: image_name.to_string(),
+                image: get_docker_image_name(platform).unwrap().to_string(),
             };
             cross_config.windows = Some(cross_windows);
         }
-        "linux" => {
-            let cross_linux = CrossImage {
-                image: image_name.to_string(),
-            };
-            cross_config.linux = Some(cross_linux);
-        }
+        // "linux" => {
+        //     let cross_linux = CrossImage {
+        //         image: get_docker_image_name(platform).unwrap().to_string(),
+        //     };
+        //     cross_config.linux = Some(cross_linux);
+        // }
         _ => (),
     };
 
@@ -204,37 +204,54 @@ fn build_docker_image_for_platform(platform: &str) {
 
     // Get the path to the docker image in the library docker directory.
     let docker_file_path = match platform {
-        "windows" => docker_images_directory.join("Dockerfile.x86_64-pc-windows-gnu"),
-        "linux" => docker_images_directory.join("Dockerfile.x86_64-unknown-linux-gnu"),
-        _ => docker_images_directory.join("Dockerfile.x86_64-unknown-linux-gnu"),
+        "windows" => Some(docker_images_directory.join("Dockerfile.x86_64-pc-windows-gnu")),
+        "linux" => Some(docker_images_directory.join("Dockerfile.x86_64-unknown-linux-gnu")),
+        _ => None,
     };
 
     // Create the tag for the image.
     let docker_image_tag = match platform {
-        "windows" => "godot-rust-cli-platform-windows:v2",
-        "linux" => "godot-rust-cli-platform-linux:v2",
-        _ => "godot-rust-cli-platform-linux:v2",
+        "windows" => Some("godot-rust-cli-platform-windows:v1"),
+        "linux" => Some("godot-rust-cli-platform-linux:v1"),
+        _ => None,
     };
 
     log_info_to_console(&format!("[cross] Building {} docker image.", &platform));
 
-    // Run the docker build command for the image passing in the docker file
-    // and the tag.
-    let mut docker_build_command = Command::new("docker");
-    docker_build_command
-        .arg("build")
-        .arg("-f")
-        .arg(&docker_file_path)
-        .arg("-t")
-        .arg(&docker_image_tag)
-        .arg(".");
+    match (docker_file_path, docker_image_tag) {
+        (Some(docker_file_path_value), Some(docker_image_tag_value)) => {
+            // Run the docker build command for the image passing in the docker file
+            // and the tag.
+            let mut docker_build_command = Command::new("docker");
+            docker_build_command
+                .arg("build")
+                .arg("-f")
+                .arg(&docker_file_path_value)
+                .arg("-t")
+                .arg(&docker_image_tag_value)
+                .arg(".");
 
-    docker_build_command
-        .status()
-        .expect("Unable to build windows docker image.");
+            docker_build_command
+                .status()
+                .expect("Unable to build windows docker image.");
 
-    log_info_to_console(&format!(
-        "[cross] Finished building {} docker image.",
-        &platform
-    ));
+            log_info_to_console(&format!(
+                "[cross] Finished building {} docker image.",
+                &platform
+            ));
+        }
+        _ => (),
+    };
+}
+
+/// Returns the name for the docker image used for the provided platform.
+///
+/// # Arguments
+///
+/// `platform` - The platform to get the docker image name for.
+pub fn get_docker_image_name(platform: &str) -> Option<&str> {
+    return match platform {
+        "windows" => Some("godot-rust-cli-platform-windows:v1"),
+        _ => None,
+    };
 }

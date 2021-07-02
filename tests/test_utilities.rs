@@ -91,7 +91,7 @@ pub fn cleanup_docker_images() {
     cmd_remove_custom_windows_docker_image
         .arg("image")
         .arg("rmi")
-        .arg("godot-rust-cli-platform-windows:v2");
+        .arg("godot-rust-cli-platform-windows:v1");
     cmd_remove_custom_windows_docker_image.status().unwrap();
 }
 

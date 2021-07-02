@@ -124,7 +124,7 @@ fn get_entries_and_dependencies_to_add_to_gdnlib(
     let base_path = if is_plugin {
         format!("res://addons/{}", library_name_snake_case)
     } else {
-        "res://".to_owned()
+        "res:/".to_owned()
     };
 
     let osx_bin_path = format!(

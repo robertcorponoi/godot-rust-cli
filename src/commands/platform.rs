@@ -2,7 +2,7 @@ use crate::config_utils::{
     add_platform_to_config, get_config_as_object, remove_platform_from_config_if_exists,
 };
 use crate::cross_utils::add_image_override_for_platform;
-use crate::log_utils::log_error_to_console;
+use crate::log_utils::{log_error_to_console, log_info_to_console};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::process::exit;
@@ -45,6 +45,9 @@ pub fn add_platform(platform: &str) {
         // Add the platform to the `platforms` array in the config.
         add_platform_to_config(&platform_normalized, &mut config);
 
+        // Since we need images that do more than the default cross images, we
+        // have to copy the docker file override into the user's library and
+        // add it
         add_image_override_for_platform(&platform_normalized);
     } else {
         log_error_to_console(&format!("The target {} isn't a valid target. Please file an issue in the GitHub or Discord if this is incorrect.", &platform));
@@ -59,7 +62,49 @@ pub fn add_platform(platform: &str) {
 /// `platform` - The platform to remove.
 pub fn remove_platform(platform: &str) {
     let mut config = get_config_as_object();
+
+    // Remove the platform from the `platforms` array in the configuration.
     remove_platform_from_config_if_exists(platform, &mut config);
+
+    // Remove the docker image from the user's system since it's no longer
+    // needed.
+    remove_docker_image(platform);
+}
+
+/// Removes a docker image from the user's system.
+///
+/// # Arguments
+///
+/// `platform` - The platform to remove the docker image for.
+fn remove_docker_image(platform: &str) {
+    // Get the name of the image to remove depending on the platform being
+    // removed.
+    let image_name = match platform {
+        "windows" => Some("godot-rust-cli-platform-windows:v1"),
+        _ => None,
+    };
+
+    match image_name {
+        Some(image_tag) => {
+            let mut remove_default_docker_image_command = std::process::Command::new("docker");
+            remove_default_docker_image_command
+                .arg("rmi")
+                .arg("rustembedded/cross:x86_64-pc-windows-gnu");
+
+            remove_default_docker_image_command
+                .status()
+                .expect("Unable to remove docker image rustembedded/cross:x86_64-pc-windows-gnu");
+
+            let mut remove_custom_docker_image_command = std::process::Command::new("docker");
+            remove_custom_docker_image_command.arg("rmi").arg(image_tag);
+
+            remove_custom_docker_image_command
+                .status()
+                .expect(&format!("Unable to remove docker image {}", image_tag));
+            log_info_to_console(&format!("Removed docker image for {}", &platform));
+        }
+        None => (),
+    }
 }
 
 lazy_static! {
