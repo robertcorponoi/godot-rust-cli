@@ -47,7 +47,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: -- --test-threads=1
+          args: -- --test-threads=1 --skip platform_add_windows_platform_and_build
 
   # clippy:
   #   name: clippy

@@ -6,7 +6,7 @@ use std::path::Path;
 use std::process::Command;
 
 mod test_utilities;
-use test_utilities::{cleanup_test_files, init_test, BUILD_FILE_PREFIX, BUILD_FILE_TYPE};
+use test_utilities::{cleanup_test_files, init_test};
 
 /// Creates a library and a module and runs the build command ands checks to
 /// make sure that the dynamic library was created and copied to the Godot
@@ -49,9 +49,12 @@ fn build_godot_project() -> Result<(), Box<dyn Error>> {
 
     // 4. Assert that the dynamic library was copied over.
     let dynamic_library_name = format!(
-        "platformer/bin/{}platformer_modules.{}",
-        BUILD_FILE_PREFIX, BUILD_FILE_TYPE
+        "platformer/gdnative/bin/{}/{}platformer_modules{}",
+        std::env::consts::OS.to_lowercase(),
+        std::env::consts::DLL_PREFIX,
+        std::env::consts::DLL_SUFFIX
     );
+
     let dynamic_library_path = Path::new(&dynamic_library_name);
     assert_eq!(dynamic_library_path.exists(), true);
 

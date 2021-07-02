@@ -20,12 +20,6 @@ pub fn exit_if_not_lib_dir() {
     }
 }
 
-/// Returns the path to the dynamic libraries.
-pub fn get_dynamic_libraries_path() -> PathBuf {
-    let curr_dir = current_dir().expect("Unable to get current directory");
-    return Path::new(&curr_dir).join("target").join("debug");
-}
-
 /// Returns the absolute path from a PathBuf.
 ///
 /// # Arguments

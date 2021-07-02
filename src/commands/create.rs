@@ -1,4 +1,5 @@
 use std::env::current_dir;
+use std::fs::create_dir_all;
 use std::fs::write;
 use std::path::PathBuf;
 
@@ -97,8 +98,8 @@ fn create_initial_module_file_in_library(
 }
 
 /// Creates the gdns file for the module from the template and places it either
-/// in the rust_modules directory at the root of the Godot project if it is a
-/// normal library or in the rust_modules directory at the root of the plugin
+/// in the gdnative directory at the root of the Godot project if it is a
+/// normal library or in the gdnative directory at the root of the plugin
 /// directory in the Godot project if it is a plugin library.
 ///
 /// # Arguments
@@ -116,45 +117,34 @@ fn create_gdns_file_in_godot(
     let gdns_file_name = format!("{}.gdns", &module_name_snake_case);
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
-    let gdns_path: PathBuf = if config.is_plugin {
-        // Since the library is a plugin, we check to first check whether the
-        // `rust_modules` directory exists in the Godot project or not. If it
-        // does then we write the gdns file that, otherwise we write it to the
-        // root of the plugin directory.
-        let plugin_rust_modules_dir = godot_project_dir
+    let gdns_dir: PathBuf = if config.is_plugin {
+        godot_project_dir
             .join("addons")
             .join(&library_name_snake_case)
-            .join("rust_modules");
-        if plugin_rust_modules_dir.exists() {
-            plugin_rust_modules_dir.join(gdns_file_name)
-        } else {
-            godot_project_dir
-                .join("addons")
-                .join(&library_name_snake_case)
-                .join(gdns_file_name)
-        }
+            .join("gdnative")
     } else {
-        godot_project_dir.join("rust_modules").join(gdns_file_name)
+        godot_project_dir.join("gdnative")
     };
 
-    // The path to the library is either the root directory of the plugin if it
-    // is a plugin or just the root of the Godot project otherwise.
-    let gdns_library_path = if config.is_plugin {
+    create_dir_all(&gdns_dir).expect("Unable to create directory for module file in Godot.");
+
+    // The path to the gdnlib file in the Godot project.
+    let gdnlib_path = if config.is_plugin {
         format!(
-            "addons/{}/{}",
+            "addons/{}/gdnative/{}",
             &library_name_snake_case, &library_name_snake_case
         )
     } else {
-        format!("{}", &library_name_snake_case)
+        format!("gdnative/{}", &library_name_snake_case)
     };
 
     // Replace the values in our template with the name of the library and the
     // pascal version of the module name.
     let gdns_template = include_str!("../templates/gdns.txt");
     let gdns_with_module_name = gdns_template
-        .replace("LIBRARY_PATH", &gdns_library_path)
+        .replace("GDNLIB_PATH", &gdnlib_path)
         .replace("MODULE_NAME", &module_name_pascal_case);
 
-    write(gdns_path, gdns_with_module_name)
+    write(gdns_dir.join(&gdns_file_name), gdns_with_module_name)
         .expect("Unable to create module's gdns file while creating the module");
 }

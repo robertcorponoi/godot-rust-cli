@@ -115,7 +115,7 @@ fn destroy_module_godot_structure() -> Result<(), Box<dyn Error>> {
     set_current_dir("../")?;
 
     // 4. Assert that the module no longer has a gdns file.
-    let module_gdns_path = Path::new("platformer/rust_modules/player.gdns");
+    let module_gdns_path = Path::new("platformer/gdnative/player.gdns");
     assert_eq!(module_gdns_path.exists(), false);
 
     Ok(())
@@ -325,16 +325,16 @@ fn destroy_modules_godot_structure() -> Result<(), Box<dyn Error>> {
     set_current_dir("../")?;
 
     // 4. Assert that the modules that weren't deleted have a gdns file still.
-    let player_gdns_path = Path::new("platformer/rust_modules/player.gdns");
-    let level_gdns_path = Path::new("platformer/rust_modules/level.gdns");
-    let environment_gdns_path = Path::new("platformer/rust_modules/environment.gdns");
+    let player_gdns_path = Path::new("platformer/gdnative/player.gdns");
+    let level_gdns_path = Path::new("platformer/gdnative/level.gdns");
+    let environment_gdns_path = Path::new("platformer/gdnative/environment.gdns");
     assert_eq!(player_gdns_path.exists(), true);
     assert_eq!(level_gdns_path.exists(), true);
     assert_eq!(environment_gdns_path.exists(), true);
 
     // 4. Assert that the modules that were deleted no longer have a gdns file.
-    let enemy_gdns_path = Path::new("platformer/rust_modules/enemy.gdns");
-    let space_gdns_path = Path::new("platformer/rust_modules/space.gdns");
+    let enemy_gdns_path = Path::new("platformer/gdnative/enemy.gdns");
+    let space_gdns_path = Path::new("platformer/gdnative/space.gdns");
     assert_eq!(enemy_gdns_path.exists(), false);
     assert_eq!(space_gdns_path.exists(), false);
 
@@ -342,7 +342,7 @@ fn destroy_modules_godot_structure() -> Result<(), Box<dyn Error>> {
 }
 
 /// Creates a library and then a module and then moves the module from the
-/// rust_modules folder into its own folder and makes sure that it still gets
+/// gdnative folder into its own folder and makes sure that it still gets
 /// deleted.
 #[test]
 fn destroy_moved_module_godot_structure() -> Result<(), Box<dyn Error>> {
@@ -376,7 +376,7 @@ fn destroy_moved_module_godot_structure() -> Result<(), Box<dyn Error>> {
         .expect("Unable to create player dir");
 
     Command::new("mv")
-        .arg("../platformer/rust_modules/player.gdns")
+        .arg("../platformer/gdnative/player.gdns")
         .arg("../platformer/player/player.gdns")
         .output()
         .expect("Unable to move player script");
@@ -392,7 +392,7 @@ fn destroy_moved_module_godot_structure() -> Result<(), Box<dyn Error>> {
 
     set_current_dir("../")?;
 
-    let module_gdns_path_old = Path::new("platformer/rust_modules/player.gdns");
+    let module_gdns_path_old = Path::new("platformer/gdnative/player.gdns");
     let module_gdns_path_new = Path::new("platformer/player/player.gdns");
 
     assert_eq!(module_gdns_path_old.exists(), false);

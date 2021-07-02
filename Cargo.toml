@@ -25,6 +25,7 @@ dunce = "1.0.1"
 syn = { version = "1.0", features = ["full", "parsing", "printing", "visit", "visit-mut", "extra-traits"] }
 convert_case = "0.4.0"
 walkdir = "2"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 assert_cmd = "1.0.2"

@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process::Command;
 
 mod test_utilities;
-use test_utilities::{cleanup_test_files, init_test, BUILD_FILE_PREFIX, BUILD_FILE_TYPE};
+use test_utilities::{cleanup_test_files, init_test, Gdnlib};
 
 /// Creates a plugin and checks that all of the files in the library exist and
 /// that their values are what they should be.
@@ -40,6 +40,7 @@ fn plugin_create_library_structure() -> Result<(), Box<dyn Error>> {
     assert_eq!(config_json["godot_project_name"], "platformer");
     assert_eq!(config_json["is_plugin"], true);
     assert_eq!(config_json["modules"], json!([]));
+    assert_eq!(config_json["platforms"], json!([]));
 
     // 4. Assert that by default the plugin should have a module with the name of the plugin.
     let plugin_module_path = Path::new("src/directory_browser.rs");
@@ -105,15 +106,17 @@ fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 3. Assert that the dynamic library for the plugin exists in the plugin's bin directory.
     let plugin_dynamic_library_name = format!(
-        "platformer/addons/directory_browser/bin/{}directory_browser.{}",
-        BUILD_FILE_PREFIX, BUILD_FILE_TYPE
+        "platformer/addons/directory_browser/gdnative/bin/{}/{}directory_browser{}",
+        std::env::consts::OS.to_lowercase(),
+        std::env::consts::DLL_PREFIX,
+        std::env::consts::DLL_SUFFIX
     );
     let plugin_dynamic_library_path = Path::new(&plugin_dynamic_library_name);
     assert_eq!(plugin_dynamic_library_path.exists(), true);
 
-    // 4. Assert that the `rust_modules` directory was created in the plugin's directory.
-    let plugin_rust_modules_path = Path::new("platformer/addons/directory_browser/rust_modules");
-    assert_eq!(plugin_rust_modules_path.exists(), true);
+    // 4. Assert that the `gdnative` directory was created in the plugin's directory.
+    let plugin_gdnative_path = Path::new("platformer/addons/directory_browser/gdnative");
+    assert_eq!(plugin_gdnative_path.exists(), true);
 
     // 5. Assert that the `plugin.cfg` file exists.
     let plugin_cfg_path = Path::new("platformer/addons/directory_browser/plugin.cfg");
@@ -130,7 +133,8 @@ fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
     assert_eq!(plugin_cfg_split[5], "script = \"directory_browser.gdns\"");
 
     // 7. Assert that the plugin's gdns file exists.
-    let plugin_gdns_path = Path::new("platformer/addons/directory_browser/directory_browser.gdns");
+    let plugin_gdns_path =
+        Path::new("platformer/addons/directory_browser/gdnative/directory_browser.gdns");
     assert_eq!(plugin_gdns_path.exists(), true);
 
     // 8. Assert that the contents of the plugin's gdns file are what we expect.
@@ -139,33 +143,65 @@ fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
         .split("\n")
         .map(|x| x.replace("\r", ""))
         .collect::<Vec<String>>();
-    assert_eq!(plugin_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
+    assert_eq!(plugin_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/gdnative/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
     assert_eq!(plugin_gdns_split[6], "resource_name = \"DirectoryBrowser\"");
     assert_eq!(plugin_gdns_split[7], "class_name = \"DirectoryBrowser\"");
 
     // 9. Assert that the plugin's gdnlib file exists.
     let plugin_gdnlib_path =
-        Path::new("platformer/addons/directory_browser/directory_browser.gdnlib");
+        Path::new("platformer/addons/directory_browser/gdnative/directory_browser.gdnlib");
     assert_eq!(plugin_gdnlib_path.exists(), true);
 
     // 10. Assert that the contents of the plugin's gdnlib file are what we expect.
-    let plugin_gdnlib_string = read_to_string(plugin_gdnlib_path)?;
-    let plugin_gdnlib_split = plugin_gdnlib_string
-        .split("\n")
-        .map(|x| x.replace("\r", ""))
-        .collect::<Vec<String>>();
+    let gdnlib_string = read_to_string(plugin_gdnlib_path)?;
+    let gdnlib_toml: Gdnlib = toml::from_str(&gdnlib_string)?;
+    assert_eq!(gdnlib_toml.general.singleton, false);
+    assert_eq!(gdnlib_toml.general.load_once, true);
+    assert_eq!(gdnlib_toml.general.symbol_prefix, "godot_");
+    assert_eq!(gdnlib_toml.general.reloadable, true);
+
     assert_eq!(
-        plugin_gdnlib_split[9],
-        "OSX.64=\"res://addons/directory_browser/bin/libdirectory_browser.dylib\""
+        gdnlib_toml.entry.get("Android.x86_64"),
+        Some(
+            &"res://addons/directory_browser/gdnative/bin/android/x86_64-linux-android/libdirectory_browser.so".to_owned()
+        )
     );
     assert_eq!(
-        plugin_gdnlib_split[10],
-        "Windows.64=\"res://addons/directory_browser/bin/directory_browser.dll\""
+        gdnlib_toml.entry.get("Android.arm64-v8a"),
+        Some(
+            &"res://addons/directory_browser/gdnative/bin/android/aarch64-linux-android/libdirectory_browser.so".to_owned()
+        )
     );
     assert_eq!(
-        plugin_gdnlib_split[11],
-        "X11.64=\"res://addons/directory_browser/bin/libdirectory_browser.so\""
+        gdnlib_toml.entry.get("Windows.64"),
+        Some(
+            &"res://addons/directory_browser/gdnative/bin/windows/directory_browser.dll".to_owned()
+        )
     );
+    assert_eq!(
+        gdnlib_toml.entry.get("OSX.64"),
+        Some(
+            &"res://addons/directory_browser/gdnative/bin/macos/libdirectory_browser.dylib"
+                .to_owned()
+        )
+    );
+    assert_eq!(
+        gdnlib_toml.entry.get("X11.64"),
+        Some(
+            &"res://addons/directory_browser/gdnative/bin/linux/libdirectory_browser.so".to_owned()
+        )
+    );
+    assert_eq!(
+        gdnlib_toml.dependencies.get("Android.x86_64"),
+        Some(&vec![])
+    );
+    assert_eq!(
+        gdnlib_toml.dependencies.get("Android.arm64-v8a"),
+        Some(&vec![])
+    );
+    assert_eq!(gdnlib_toml.dependencies.get("Windows.64"), Some(&vec![]));
+    assert_eq!(gdnlib_toml.dependencies.get("OSX.64"), Some(&vec![]));
+    assert_eq!(gdnlib_toml.dependencies.get("X11.64"), Some(&vec![]));
 
     cleanup_test_files();
 
@@ -290,15 +326,16 @@ fn plugin_create_module_godot_structure() -> Result<(), Box<dyn Error>> {
 
     // 3. Assert that the dynamic library for the plugin exists in the plugin's bin directory.
     let plugin_dynamic_library_name = format!(
-        "platformer/addons/directory_browser/bin/{}directory_browser.{}",
-        BUILD_FILE_PREFIX, BUILD_FILE_TYPE
+        "platformer/addons/directory_browser/gdnative/bin/{}/{}directory_browser{}",
+        std::env::consts::OS.to_lowercase(),
+        std::env::consts::DLL_PREFIX,
+        std::env::consts::DLL_SUFFIX
     );
     let plugin_dynamic_library_path = Path::new(&plugin_dynamic_library_name);
     assert_eq!(plugin_dynamic_library_path.exists(), true);
 
     // 4. Assert that the plugin's gdns file exists.
-    let module_gdns_path =
-        Path::new("platformer/addons/directory_browser/rust_modules/explorer.gdns");
+    let module_gdns_path = Path::new("platformer/addons/directory_browser/gdnative/explorer.gdns");
     assert_eq!(module_gdns_path.exists(), true);
 
     // 8. Assert that the contents of the plugin's gdns file are what we expect.
@@ -307,7 +344,7 @@ fn plugin_create_module_godot_structure() -> Result<(), Box<dyn Error>> {
         .split("\n")
         .map(|x| x.replace("\r", ""))
         .collect::<Vec<String>>();
-    assert_eq!(module_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
+    assert_eq!(module_gdns_split[2], "[ext_resource path=\"res://addons/directory_browser/gdnative/directory_browser.gdnlib\" type=\"GDNativeLibrary\" id=1]");
     assert_eq!(module_gdns_split[6], "resource_name = \"Explorer\"");
     assert_eq!(module_gdns_split[7], "class_name = \"Explorer\"");
 

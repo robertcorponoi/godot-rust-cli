@@ -127,18 +127,17 @@ fn remove_module_gdns_from_godot(
     let gdns_file_name = format!("{}.gdns", &module_name_snake_case);
 
     // The first place we should check for the module to remove is either the
-    // `rust_modules` folder in the plugin directory if it's a plugin or just
-    // the `rust_modules` folder in the root directory of the Godot project
-    // otherwise.
+    // gdnative folder in the plugin directory if it's a plugin or just the
+    // gdnative folder in the root directory of the Godot project otherwise.
     let possible_gdns_path = if config.is_plugin {
         godot_project_absolute_path
             .join("addons")
             .join(&library_name_snake_case)
-            .join("rust_modules")
+            .join("gdnative")
             .join(&gdns_file_name)
     } else {
         godot_project_absolute_path
-            .join("rust_modules")
+            .join("gdnative")
             .join(&gdns_file_name)
     };
 

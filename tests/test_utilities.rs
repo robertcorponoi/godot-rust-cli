@@ -1,50 +1,25 @@
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs::{remove_dir_all, remove_file};
 use std::path::Path;
+use std::process::Command;
 
-/// If the tests are being run on windows, then the build file is a dll file.
-#[cfg(target_os = "windows")]
-#[allow(dead_code)]
-pub const BUILD_FILE_NAME: &str = "platformer_modules.dll";
+/// The structure of the gdnlib file.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Gdnlib {
+    pub general: GdnlibGeneral,
+    pub entry: HashMap<String, String>,
+    pub dependencies: HashMap<String, Vec<String>>,
+}
 
-/// If the tests are being run on linux, then the build file is a libx.so file.
-#[cfg(target_os = "linux")]
-#[allow(dead_code)]
-pub const BUILD_FILE_NAME: &str = "libplatformer_modules.so";
-
-/// If the tests are being run on macos, then the build file is a libx.dylib file.
-#[cfg(target_os = "macos")]
-#[allow(dead_code)]
-pub const BUILD_FILE_NAME: &str = "libplatformer_modules.dylib";
-
-/// If the tests are being run on windows, then there is no build file prefix.
-#[cfg(target_os = "windows")]
-#[allow(dead_code)]
-pub const BUILD_FILE_PREFIX: &str = "";
-
-/// If the tests are being run on linux, then the build file prefix is lib.
-#[cfg(target_os = "linux")]
-#[allow(dead_code)]
-pub const BUILD_FILE_PREFIX: &str = "lib";
-
-/// If the tests are being run on macos, then the build file prefix is lib.
-#[cfg(target_os = "macos")]
-#[allow(dead_code)]
-pub const BUILD_FILE_PREFIX: &str = "lib";
-
-/// If the tests are being run on windows, then the build file type is a dll file.
-#[cfg(target_os = "windows")]
-#[allow(dead_code)]
-pub const BUILD_FILE_TYPE: &str = "dll";
-
-/// If the tests are being run on linux, then the build file type is a .so file.
-#[cfg(target_os = "linux")]
-#[allow(dead_code)]
-pub const BUILD_FILE_TYPE: &str = "so";
-
-/// If the tests are being run on macos, then the build file is type a .dylib file.
-#[cfg(target_os = "macos")]
-#[allow(dead_code)]
-pub const BUILD_FILE_TYPE: &str = "dylib";
+/// The structure of the general section of the gdnlib file.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GdnlibGeneral {
+    pub singleton: bool,
+    pub load_once: bool,
+    pub symbol_prefix: String,
+    pub reloadable: bool,
+}
 
 /// Some tests need to change directory to run correctly so this function is
 /// called after those tests to go back to the tests directory that every
@@ -100,6 +75,24 @@ pub fn cleanup_test_files() {
     if Path::new("platformer/addons").exists() {
         remove_dir_all("platformer/addons").expect("Unable to remove plugin addons dir");
     }
+}
+
+/// Some tests create docker images so we want to remove them after the tests.
+#[allow(dead_code)]
+pub fn cleanup_docker_images() {
+    let mut cmd_remove_windows_docker_image = Command::new("docker");
+    cmd_remove_windows_docker_image
+        .arg("image")
+        .arg("rmi")
+        .arg("rustembedded/cross:x86_64-pc-windows-gnu");
+    cmd_remove_windows_docker_image.status().unwrap();
+
+    let mut cmd_remove_custom_windows_docker_image = Command::new("docker");
+    cmd_remove_custom_windows_docker_image
+        .arg("image")
+        .arg("rmi")
+        .arg("godot-rust-cli-platform-windows:v1");
+    cmd_remove_custom_windows_docker_image.status().unwrap();
 }
 
 /// Returns the path of the specified file.

@@ -109,7 +109,7 @@ fn create_module_godot_structure() -> Result<(), Box<dyn Error>> {
     set_current_dir("../")?;
 
     // 3. Assert that the gdns file for the module was created.
-    let module_gdns_path = Path::new("platformer/rust_modules/player.gdns");
+    let module_gdns_path = Path::new("platformer/gdnative/player.gdns");
     assert_eq!(module_gdns_path.exists(), true);
 
     // 4. Assert that the gnds file has the correct contents.
@@ -120,7 +120,7 @@ fn create_module_godot_structure() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
     assert_eq!(
         module_gdns_split[2],
-        "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
+        "[ext_resource path=\"res://gdnative/platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
     );
     assert_eq!(module_gdns_split[6], "resource_name = \"Player\"");
     assert_eq!(module_gdns_split[7], "class_name = \"Player\"");
@@ -263,9 +263,9 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
     set_current_dir("../")?;
 
     // 3. Assert that the gdns files for the modules were created.
-    let player_module_gdns_path = Path::new("platformer/rust_modules/player.gdns");
-    let enemy_module_gdns_path = Path::new("platformer/rust_modules/enemy.gdns");
-    let level_module_gdns_path = Path::new("platformer/rust_modules/level.gdns");
+    let player_module_gdns_path = Path::new("platformer/gdnative/player.gdns");
+    let enemy_module_gdns_path = Path::new("platformer/gdnative/enemy.gdns");
+    let level_module_gdns_path = Path::new("platformer/gdnative/level.gdns");
     assert_eq!(player_module_gdns_path.exists(), true);
     assert_eq!(enemy_module_gdns_path.exists(), true);
     assert_eq!(level_module_gdns_path.exists(), true);
@@ -278,7 +278,7 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
     assert_eq!(
         player_module_gdns_split[2],
-        "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
+        "[ext_resource path=\"res://gdnative/platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
     );
     assert_eq!(player_module_gdns_split[6], "resource_name = \"Player\"");
     assert_eq!(player_module_gdns_split[7], "class_name = \"Player\"");
@@ -290,7 +290,7 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
     assert_eq!(
         enemy_module_gdns_split[2],
-        "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
+        "[ext_resource path=\"res://gdnative/platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
     );
     assert_eq!(enemy_module_gdns_split[6], "resource_name = \"Enemy\"");
     assert_eq!(enemy_module_gdns_split[7], "class_name = \"Enemy\"");
@@ -302,7 +302,7 @@ fn create_multiple_modules_godot_structure() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
     assert_eq!(
         level_module_gdns_split[2],
-        "[ext_resource path=\"res://platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
+        "[ext_resource path=\"res://gdnative/platformer_modules.gdnlib\" type=\"GDNativeLibrary\" id=1]"
     );
     assert_eq!(level_module_gdns_split[6], "resource_name = \"Level\"");
     assert_eq!(level_module_gdns_split[7], "class_name = \"Level\"");
