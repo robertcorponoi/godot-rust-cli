@@ -250,12 +250,13 @@ Builds the library to generate the dynamic libraries and then copies them to the
 **Usage:**
 
 ```sh
-godot-rust-cli build [--w, --watch]
+godot-rust-cli build [--w, --watch] [-r, --release]
 ```
 
 where:
 
 - `w, --watch` can be passed optionally to have Godot Rust CLI watch the library for changes and rebuild automatically.
+- `r, --release` can be passed optionally to create a release build instead of the default debug build.
 
 **Examples:**
 
