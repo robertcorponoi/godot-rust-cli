@@ -14,6 +14,9 @@ pub struct Config {
     /// The name of the library.
     /// Added v0.3.0
     pub name: String,
+    /// The version of godot-rust-cli being used for this library.
+    /// Added v0.4.0
+    pub cli_version: String,
     /// The name of the directory of the Godot project.
     /// Added v0.4.0
     pub godot_project_dir_name: String,
@@ -46,8 +49,10 @@ pub fn create_initial_config(
     godot_project_dir_name: String,
     is_plugin: bool,
 ) -> Config {
+    let cli_version = env!("CARGO_PKG_VERSION").to_string();
     let config = Config {
         name: library_name,
+        cli_version,
         godot_project_dir_name: godot_project_dir_name,
         is_plugin: is_plugin,
         platforms: vec![],
