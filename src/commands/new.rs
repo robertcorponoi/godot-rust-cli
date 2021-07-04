@@ -39,13 +39,13 @@ pub fn create_library(name: &str, godot_project_dir: PathBuf, plugin: bool, skip
 
     create_library_cargo_toml();
 
-    let godot_project_name = godot_project_absolute_path
+    let godot_project_dir_name = godot_project_absolute_path
         .file_name()
         .unwrap()
         .to_str()
         .expect("Unable to convert Godot file name to str")
         .to_string();
-    let config = create_initial_config(name.to_owned(), godot_project_name, plugin);
+    let config = create_initial_config(name.to_owned(), godot_project_dir_name, plugin);
     create_initial_lib_file();
 
     log_styled_message_to_console(

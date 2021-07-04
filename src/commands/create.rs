@@ -33,7 +33,7 @@ pub fn create_module(name: &str) {
 
     let mut config = get_config_as_object();
 
-    let path_to_godot_project = parent_dir_path.join(&config.godot_project_name);
+    let path_to_godot_project = parent_dir_path.join(&config.godot_project_dir_name);
 
     log_styled_message_to_console("Creating module", ConsoleColors::WHITE);
 

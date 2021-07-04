@@ -11,7 +11,6 @@ use crate::file_utils::copy_file_to_location;
 use crate::log_utils::{
     log_error_to_console, log_info_to_console, log_success_to_console, log_version,
 };
-use crate::time_utils::get_current_datetime_formatted;
 
 /// Runs the command to build the library and then copies over the dynamic
 /// libraries to the Godot project.
@@ -113,13 +112,15 @@ pub fn build_library_and_watch_for_changes(is_release: bool, build_all_targets: 
 pub fn build_library_with_timestamp(is_release: bool, build_all_targets: bool) {
     build_library(is_release, build_all_targets);
 
+    let dt = Local::now();
+    let current_datetime_formatted = dt.format("%Y-%m-%d %H:%M:%S").to_string();
+
     // After the build we want to show a message letting the user know that the
     // build has finished and is waiting for futher changes before rebuilding.
     log_info_to_console("");
     log_info_to_console(&format!(
         "[{}] {}",
-        get_current_datetime_formatted(),
-        "waiting for changes..."
+        current_datetime_formatted, "waiting for changes..."
     ));
 }
 
@@ -192,7 +193,7 @@ fn build_for_platform(
     // will be copied to.
     let godot_project_bin_path = if config.is_plugin {
         parent_dir
-            .join(&config.godot_project_name)
+            .join(&config.godot_project_dir_name)
             .join("addons")
             .join(&library_name_snake_case)
             .join("gdnative")
@@ -200,7 +201,7 @@ fn build_for_platform(
             .join(&platform)
     } else {
         parent_dir
-            .join(&config.godot_project_name)
+            .join(&config.godot_project_dir_name)
             .join("gdnative")
             .join("bin")
             .join(&platform)

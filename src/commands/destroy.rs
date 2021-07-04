@@ -31,7 +31,7 @@ pub fn destroy_module(name: &str) {
     let parent_dir = current_dir_path
         .parent()
         .expect("Unable to get shared directory while destroying the module");
-    let path_to_godot_project = parent_dir.join(&config.godot_project_name);
+    let path_to_godot_project = parent_dir.join(&config.godot_project_dir_name);
 
     remove_module_from_config_if_exists(&module_name_pascal_case, &mut config);
 

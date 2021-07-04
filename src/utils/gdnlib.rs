@@ -39,12 +39,14 @@ pub fn get_path_to_gdnlib_file(config: &Config) -> PathBuf {
     let library_name_snake_case = &config.name.to_case(Case::Snake);
     let gdnlib_directory: PathBuf = if config.is_plugin {
         parent_dir
-            .join(&config.godot_project_name)
+            .join(&config.godot_project_dir_name)
             .join("addons")
             .join(library_name_snake_case)
             .join("gdnative")
     } else {
-        parent_dir.join(&config.godot_project_name).join("gdnative")
+        parent_dir
+            .join(&config.godot_project_dir_name)
+            .join("gdnative")
     };
 
     std::fs::create_dir_all(&gdnlib_directory).expect("Unable to create dir for gdnlib file.");

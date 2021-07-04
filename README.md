@@ -154,14 +154,14 @@ Creates a new library to house the Rust modules for a Godot project.
 **Usage:**
 
 ```sh
-godot-rust-cli new <library_name> <godot_project_name>
+godot-rust-cli new <library_name> <godot_project_dir_name>
 ```
 
 where:
 
 - `library_name` is the name of the library. Note that libraries are cargo packages so you should stick to cargo naming standards.
 
-- `godot_project_name` - The name of the directory of the Godot project. This will be used by Godot Rust CLI to reference when it needs to write files to the Godot project.
+- `godot_project_dir_name` - The name of the directory of the Godot project. This will be used by Godot Rust CLI to reference when it needs to write files to the Godot project.
 
 **Examples::**
 

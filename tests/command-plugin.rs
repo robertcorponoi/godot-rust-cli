@@ -37,7 +37,7 @@ fn plugin_create_library_structure() -> Result<(), Box<dyn Error>> {
     let config = read_to_string("godot-rust-cli.json")?;
     let config_json: Value = serde_json::from_str(&config)?;
     assert_eq!(config_json["name"], "Directory Browser");
-    assert_eq!(config_json["godot_project_name"], "platformer");
+    assert_eq!(config_json["godot_project_dir_name"], "platformer");
     assert_eq!(config_json["is_plugin"], true);
     assert_eq!(config_json["modules"], json!([]));
     assert_eq!(config_json["platforms"], json!([]));
