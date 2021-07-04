@@ -27,8 +27,6 @@ mod lib_utils;
 mod log_utils;
 #[path = "./utils/path.rs"]
 mod path_utils;
-#[path = "./utils/time.rs"]
-mod time_utils;
 
 use std::path::PathBuf;
 use structopt::StructOpt;

@@ -15,8 +15,8 @@ pub struct Config {
     /// Added v0.3.0
     pub name: String,
     /// The name of the directory of the Godot project.
-    /// Added v0.1.0
-    pub godot_project_name: String,
+    /// Added v0.4.0
+    pub godot_project_dir_name: String,
     /// Indicates whether the library is for a plugin or not.
     /// Added v0.3.0
     pub is_plugin: bool,
@@ -39,16 +39,16 @@ pub fn get_path_to_config_file() -> PathBuf {
 /// # Arguments
 ///
 /// `library_name` - The name of the library.
-/// `godot_project_name` - The name of the Godot project.
+/// `godot_project_dir_name` - The name of the Godot project.
 /// `is_library` - Indicates whether the library is for a plugin or not.
 pub fn create_initial_config(
     library_name: String,
-    godot_project_name: String,
+    godot_project_dir_name: String,
     is_plugin: bool,
 ) -> Config {
     let config = Config {
         name: library_name,
-        godot_project_name: godot_project_name,
+        godot_project_dir_name: godot_project_dir_name,
         is_plugin: is_plugin,
         platforms: vec![],
         modules: vec![],
