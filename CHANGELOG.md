@@ -1,3 +1,9 @@
+## 0.4.0 / 2020-07-10
+- Added ability to add platforms, starting with windows.
+- Added ability to define a release build.
+- Updated tests.
+- Updated documentation.
+
 ## 0.3.1 / 2020-06-21
 - Made the authors field in the parsed Cargo.toml to be optional to account for setups where the user might not have a name or email.
 
