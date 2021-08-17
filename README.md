@@ -40,6 +40,10 @@ Currently, Godot Rust CLI supports creating Rust modules for Windows, MacOS, and
 
 **Note:** Godot Rust CLI is the successor to [Godot Rust Helper](https://github.com/robertcorponoi/godot_rust_helper). Godot Rust CLI aims to be much more simple but more strict. This also means that Godot Rust CLI doesn't have as many features and it enforces a much more strict project structure.
 
+**Note:** Godot Rust CLI currently builds Rust modules using the [godot-rust](https://github.com/godot-rust/godot-rust) ([gdnative](https://crates.io/crates/gdnative)) crate.
+
+**Note:** All refrences to `modules` refer to project-level modules. Godot Rust CLI does not build editor-level modules.
+
 ## Prerequisites
 
 Godot Rust CLI requires the following prerequisites:
