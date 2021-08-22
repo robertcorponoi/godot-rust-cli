@@ -10,9 +10,9 @@
 ![Crates.io](https://img.shields.io/crates/v/godot-rust-cli)
 ![Crates.io](https://img.shields.io/crates/d/godot-rust-cli)
 ![Crates.io](https://img.shields.io/crates/l/godot-rust-cli)
-[![Discord](https://img.shields.io/discord/853728834519040030.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/kr9EkBp7)
+[![Discord](https://img.shields.io/discord/853728834519040030.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/GSf8wvYzxe)
 
-Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the GitHub repo or feel free to ask questions in the [Discord](https://discord.gg/kr9EkBp7).
+Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the GitHub repo or feel free to ask questions in the [Discord](https://discord.gg/GSf8wvYzxe).
 
 Also keep in mind that the main branch will usually be ahead of the version on [crates.io](https://crates.io/crates/godot-rust-cli).
 
@@ -99,13 +99,13 @@ To update your project to be compatible with 0.2.x versions from 0.1.x versions,
 
 Libraries have switched from a toml config to a json config so if you want to update your library it is recommended to check out what the json config looks like and update your local one to match. 
 
-A tool is in development to make upgrading between major changes easier. If you need help, questions and concerns are always welcome on [Discord](https://discord.gg/kr9EkBp7).
+A tool is in development to make upgrading between major changes easier. If you need help, questions and concerns are always welcome on [Discord](https://discord.gg/GSf8wvYzxe).
 
 If you have been developing a plugin, there is unfortunately no way to upgrade without creating a new project as there was a major overhaul to plugin creation.
 
 # Questions
 
-Check out the [Discord](https://discord.gg/kr9EkBp7) to ask any questions or concerns about the cli or Godot + Rust in general.
+Check out the [Discord](https://discord.gg/GSf8wvYzxe) to ask any questions or concerns about the cli or Godot + Rust in general.
 
 ## License
 
