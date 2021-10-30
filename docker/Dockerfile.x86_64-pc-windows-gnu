@@ -1,4 +1,4 @@
-FROM rustembedded/cross:x86_64-pc-windows-gnu
+FROM docker.io/rustembedded/cross:x86_64-pc-windows-gnu
 
 RUN dpkg --add-architecture i386 && apt-get update && \
     apt-get install --assume-yes --no-install-recommends \
