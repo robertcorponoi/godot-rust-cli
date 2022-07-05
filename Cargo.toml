@@ -21,9 +21,9 @@ regex = "1.6"
 colored = "2.0.0"
 notify = "4.0.17"
 chrono = "0.4.19"
-dunce = "1.0.1"
+dunce = "1.0.2"
 syn = { version = "1.0", features = ["full", "parsing", "printing", "visit", "visit-mut", "extra-traits"] }
-convert_case = "0.4.0"
+convert_case = "0.5"
 walkdir = "2"
 lazy_static = "1.4.0"
 
