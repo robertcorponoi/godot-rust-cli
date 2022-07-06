@@ -5,8 +5,6 @@ mod definitions;
 
 #[path = "./commands/build.rs"]
 mod command_build;
-#[path = "./commands/destroy.rs"]
-mod command_destroy;
 #[path = "./commands/platform.rs"]
 mod command_platform;
 
@@ -219,7 +217,7 @@ fn main() {
             skip_build,
         } => commands::command_new(&name, godot_project_dir, plugin, skip_build),
         GodotRustCli::Create { name } => commands::command_create(&name),
-        GodotRustCli::Destroy { name } => command_destroy::destroy_module(&name),
+        GodotRustCli::Destroy { name } => commands::command_destroy(&name),
         GodotRustCli::Build {
             watch,
             release,
