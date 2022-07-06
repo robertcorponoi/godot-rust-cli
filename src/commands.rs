@@ -2,11 +2,14 @@ use std::env::{current_dir, set_current_dir};
 use std::fs::{create_dir_all, read_to_string, remove_file, write};
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
+use std::sync::mpsc::channel;
 
+use chrono::Local;
 use convert_case::{Case, Casing};
+use notify::{op, raw_watcher, RawEvent, RecursiveMode, Watcher};
 use walkdir::WalkDir;
 
-use crate::command_build::build_library;
+use crate::build_utils::build_for_platform;
 use crate::config_utils::{
     add_module_to_config, create_initial_config, get_config_as_object, is_module_in_config,
     remove_module_from_config_if_exists,
@@ -15,7 +18,10 @@ use crate::definitions::CargoToml;
 use crate::file_utils::write_and_fmt;
 use crate::gdnlib_utils::create_initial_gdnlib;
 use crate::lib_utils::add_module_to_lib;
-use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
+use crate::log_utils::{
+    log_error_to_console, log_info_to_console, log_styled_message_to_console,
+    log_success_to_console, log_version, ConsoleColors,
+};
 use crate::path_utils::{exit_if_not_lib_dir, get_absolute_path};
 
 /// Creates the library used to manage Rust modules.
@@ -166,7 +172,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
         // Otherwise, in normal environments, we want to run the initial build
         // or else Godot will throw errors stating it can't find the dynamic
         // library for the project.
-        build_library(false, false);
+        command_build(false, false);
     }
 
     log_styled_message_to_console("library created", ConsoleColors::GREEN);
@@ -385,4 +391,116 @@ pub fn command_destroy(name: &str) {
         .expect("Unable to remove the module file from the library while destroying the module");
 
     log_styled_message_to_console("Module destroyed", ConsoleColors::GREEN);
+}
+
+/// Runs the command to build the library and then copies over the dynamic
+/// libraries to the Godot project.
+///
+/// `is_release` - Indicates whether the build is a release build or not.
+/// `build_all_platforms` - Indicates whether all platforms should be built or just the native one.
+pub fn command_build(is_release: bool, build_all_platforms: bool) {
+    log_version();
+    log_info_to_console("[build] build starting...");
+
+    let current_dir = std::env::current_dir().expect("[build] Unable to get current directory.");
+    let parent_dir = current_dir
+        .parent()
+        .expect("[build] Unable to get parent directory.");
+
+    let config = get_config_as_object();
+    let library_name_snake_case = &config.name.to_case(Case::Snake);
+
+    // Build for the native platform by default.
+    let native_platform = std::env::consts::OS.to_lowercase();
+    build_for_platform(
+        parent_dir,
+        &config,
+        &library_name_snake_case,
+        &native_platform,
+        is_release,
+    );
+
+    // Build for all platforms if the flag is passed.
+    if build_all_platforms {
+        for platform in &config.platforms {
+            build_for_platform(
+                parent_dir,
+                &config,
+                &library_name_snake_case,
+                &platform.to_lowercase(),
+                is_release,
+            );
+        }
+    }
+
+    // Let the user know that the build is complete.
+    log_success_to_console("[build] build complete");
+}
+
+/// Watches the src directory in the library for changes and rebuilds the
+/// library when changes are detected.
+///
+/// # Arguments
+///
+/// `is_release` - Indicates whether the build is a release build or not.
+/// `build_all_targets` - Indicates whether all of the targets should be built instead of just the native target.
+pub fn command_build_and_watch(is_release: bool, build_all_targets: bool) {
+    let (tx, rx) = channel();
+
+    build_library_with_timestamp(is_release, build_all_targets);
+
+    let mut last_checked = Local::now();
+    let mut watcher =
+        raw_watcher(tx).expect("Unable to create watcher to watch library for changes");
+    let current_dir = std::env::current_dir()
+        .expect("Unable to get current directory while attempting to watch library for changes");
+
+    watcher
+        .watch(current_dir.join("src"), RecursiveMode::Recursive)
+        .expect("Unable to watch library directory for changes");
+    loop {
+        match rx.recv() {
+            Ok(RawEvent {
+                path: Some(_path),
+                op: Ok(op),
+                cookie: _,
+            }) => {
+                if op.contains(op::WRITE) {
+                    let now = Local::now();
+                    if (now - last_checked).num_seconds() == 0 {
+                        build_library_with_timestamp(is_release, build_all_targets);
+                    }
+                    last_checked = Local::now();
+                }
+            }
+            Ok(_event) => log_error_to_console("broken event"),
+            Err(e) => log_error_to_console(&e.to_string()),
+        }
+    }
+}
+
+/// Runs the `build_library` function to build the library and copy the
+/// dynamic library file to the Godot project.
+///
+/// In addition to that, it also logs the datetime that the build was
+/// completed as `YYYY-MM-DD HH:MM::SS and lets the user know that it is
+/// waiting for changes before building again.
+///
+/// # Arguments
+///
+/// `is_release` - Indicates whether the build is a release build or not.
+/// `build_all_targets` - Indicates whether all of the targets should be built instead of just the native target.
+pub fn build_library_with_timestamp(is_release: bool, build_all_targets: bool) {
+    command_build(is_release, build_all_targets);
+
+    let dt = Local::now();
+    let current_datetime_formatted = dt.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    // After the build we want to show a message letting the user know that the
+    // build has finished and is waiting for futher changes before rebuilding.
+    log_info_to_console("");
+    log_info_to_console(&format!(
+        "[{}] {}",
+        current_datetime_formatted, "waiting for changes..."
+    ));
 }

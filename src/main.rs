@@ -1,10 +1,9 @@
 #[macro_use]
 
 mod commands;
+mod build_utils;
 mod definitions;
 
-#[path = "./commands/build.rs"]
-mod command_build;
 #[path = "./commands/platform.rs"]
 mod command_platform;
 
@@ -224,9 +223,9 @@ fn main() {
             all,
         } => {
             if watch {
-                command_build::build_library_and_watch_for_changes(release, all);
+                commands::command_build_and_watch(release, all);
             } else {
-                command_build::build_library(release, all);
+                commands::command_build(release, all);
             }
         }
         GodotRustCli::AddPlatform { name } => command_platform::add_platform(&name),
