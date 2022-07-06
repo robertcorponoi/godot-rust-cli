@@ -4,9 +4,6 @@ mod commands;
 mod build_utils;
 mod definitions;
 
-#[path = "./commands/platform.rs"]
-mod command_platform;
-
 #[path = "./utils/config.rs"]
 mod config_utils;
 #[path = "./utils/cross.rs"]
@@ -228,7 +225,7 @@ fn main() {
                 commands::command_build(release, all);
             }
         }
-        GodotRustCli::AddPlatform { name } => command_platform::add_platform(&name),
-        GodotRustCli::RemovePlatform { name } => command_platform::remove_platform(&name),
+        GodotRustCli::AddPlatform { name } => commands::command_platform_add(&name),
+        GodotRustCli::RemovePlatform { name } => commands::command_platform_remove(&name),
     }
 }
