@@ -1,17 +1,8 @@
 #[macro_use]
 
+mod commands;
+mod build_utils;
 mod definitions;
-
-#[path = "./commands/build.rs"]
-mod command_build;
-#[path = "./commands/create.rs"]
-mod command_create;
-#[path = "./commands/destroy.rs"]
-mod command_destroy;
-#[path = "./commands/new.rs"]
-mod command_new;
-#[path = "./commands/platform.rs"]
-mod command_platform;
 
 #[path = "./utils/config.rs"]
 mod config_utils;
@@ -220,21 +211,21 @@ fn main() {
             godot_project_dir,
             plugin,
             skip_build,
-        } => command_new::create_library(&name, godot_project_dir, plugin, skip_build),
-        GodotRustCli::Create { name } => command_create::create_module(&name),
-        GodotRustCli::Destroy { name } => command_destroy::destroy_module(&name),
+        } => commands::command_new(&name, godot_project_dir, plugin, skip_build),
+        GodotRustCli::Create { name } => commands::command_create(&name),
+        GodotRustCli::Destroy { name } => commands::command_destroy(&name),
         GodotRustCli::Build {
             watch,
             release,
             all,
         } => {
             if watch {
-                command_build::build_library_and_watch_for_changes(release, all);
+                commands::command_build_and_watch(release, all);
             } else {
-                command_build::build_library(release, all);
+                commands::command_build(release, all);
             }
         }
-        GodotRustCli::AddPlatform { name } => command_platform::add_platform(&name),
-        GodotRustCli::RemovePlatform { name } => command_platform::remove_platform(&name),
+        GodotRustCli::AddPlatform { name } => commands::command_platform_add(&name),
+        GodotRustCli::RemovePlatform { name } => commands::command_platform_remove(&name),
     }
 }
