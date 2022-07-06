@@ -1,5 +1,6 @@
 #[macro_use]
 
+mod commands;
 mod definitions;
 
 #[path = "./commands/build.rs"]
@@ -8,8 +9,6 @@ mod command_build;
 mod command_create;
 #[path = "./commands/destroy.rs"]
 mod command_destroy;
-#[path = "./commands/new.rs"]
-mod command_new;
 #[path = "./commands/platform.rs"]
 mod command_platform;
 
@@ -220,7 +219,7 @@ fn main() {
             godot_project_dir,
             plugin,
             skip_build,
-        } => command_new::create_library(&name, godot_project_dir, plugin, skip_build),
+        } => commands::command_new(&name, godot_project_dir, plugin, skip_build),
         GodotRustCli::Create { name } => command_create::create_module(&name),
         GodotRustCli::Destroy { name } => command_destroy::destroy_module(&name),
         GodotRustCli::Build {
