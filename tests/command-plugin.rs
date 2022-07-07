@@ -58,12 +58,12 @@ fn plugin_create_library_structure() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
     assert_eq!(plugin_module_split[0], "use gdnative::api::EditorPlugin;");
     assert_eq!(
-        plugin_module_split[5],
+        plugin_module_split[4],
         "#[user_data(user_data::LocalCellData<DirectoryBrowser>)]"
     );
     assert_eq!(plugin_module_split[6], "pub struct DirectoryBrowser;");
     assert_eq!(plugin_module_split[9], "impl DirectoryBrowser {");
-    assert_eq!(plugin_module_split[11].trim(), "DirectoryBrowser");
+    assert_eq!(plugin_module_split[11].trim(), "DirectoryBrowser {}");
 
     // 6. Assert that the lib file exists.
     let lib_file_path = Path::new("src/lib.rs");
@@ -258,12 +258,12 @@ fn plugin_create_module_library_structure() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
     assert_eq!(module_split[0], "use gdnative::api::EditorPlugin;");
     assert_eq!(
-        module_split[5],
+        module_split[4],
         "#[user_data(user_data::LocalCellData<Explorer>)]"
     );
     assert_eq!(module_split[6], "pub struct Explorer;");
     assert_eq!(module_split[9], "impl Explorer {");
-    assert_eq!(module_split[11].trim(), "Explorer");
+    assert_eq!(module_split[11].trim(), "Explorer {}");
 
     // 6. Assert that the module is added to the lib file.
     let lib_file_string = read_to_string("src/lib.rs")?;
