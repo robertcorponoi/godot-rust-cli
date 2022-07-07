@@ -231,24 +231,71 @@ pub fn command_create(name: &str) {
         );
     }
 
-    // Creates the initial file for the module in the library directory.
-    // Get the template for the module depending whether it's a regular module
-    // or a plugin module.
-    let mod_template = if config.is_plugin {
-        include_str!("./templates/mod-plugin.rs")
+    // Next we build the script based on whether the Godot project is a plugin
+    // or not.
+    let mut scope = Scope::new();
+    if config.is_plugin {
+        scope.import("gdnative::prelude", "*");
+        scope.import("gdnative::api", "EditorPlugin");
+
+        let script_struct = scope.new_struct(&module_name_pascal_case);
+        script_struct.vis("pub");
+        script_struct.derive("gdnative::NativeClass");
+        script_struct.attr("#[inherit(EditorPlugin)]");
+        script_struct.attr(&format!(
+            "#[user_data(user_data::LocalCellData<{}>)]",
+            &module_name_pascal_case
+        ));
+
+        let script_impl = scope.new_impl(&module_name_pascal_case);
+        script_impl.r#macro("#[gdnative::methods]");
+
+        let new_fn = script_impl.new_fn("new");
+        new_fn.arg("_owner", "&EditorPlugin");
+        new_fn.ret("Self");
+        new_fn.line(format!("{} {}", &module_name_pascal_case, "{}"));
+
+        let ready_fn = script_impl.new_fn("_ready");
+        ready_fn.attr("export");
+        ready_fn.arg_mut_self();
+        ready_fn.arg("_owner", "&EditorPlugin");
+        ready_fn.line("godot_print!(\"Hello world!\")");
     } else {
-        include_str!("./templates/mod.rs")
+        scope.import("gdnative::api", "Node2D");
+        scope.import("gdnative::prelude", "*");
+
+        let script_struct = scope.new_struct(&name);
+        script_struct.vis("pub");
+        script_struct.attr("#[inherit(Node2D)]");
+        script_struct.derive("NativeClass");
+
+        let script_impl = scope.new_impl(&name);
+        script_impl.r#macro("#[methods]");
+
+        let new_fn = script_impl.new_fn("new");
+        new_fn.arg("_owner", "&Node2D");
+        new_fn.ret("Self");
+        new_fn.line(format!("{} {}", &name, "{}"));
+
+        let ready_fn = script_impl.new_fn("_ready");
+        ready_fn.attr("export");
+        ready_fn.arg_mut_self();
+        ready_fn.arg("_owner", "&Node2D");
+        ready_fn.line("godot_print!(\"Hello world!\")");
+
+        let process_fn = script_impl.new_fn("_process");
+        process_fn.attr("export");
+        process_fn.arg_mut_self();
+        process_fn.arg("_owner", "&Node2D");
+        process_fn.arg("_delta", "f32");
     };
 
-    // Replace the values in the default module template with the pascal
-    // version of the module name and write the file to the library's src
-    // directory.
-    let mod_template_with_module = mod_template.replace("MODULE_NAME", &module_name_pascal_case);
+    // Stringify the code and write it out to a file in the Godot project.
     write_and_fmt(
         format!("src/{}.rs", &module_name_snake_case),
-        mod_template_with_module,
+        scope.to_string(),
     )
-    .expect("Unable to create the initial module file in the library while creating a module");
+    .expect("Unable to create the initial script file in the library while creating a module");
 
     add_module_to_lib(name, &config);
 
