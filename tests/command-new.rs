@@ -54,9 +54,10 @@ fn new_create_library_structure() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
     assert_eq!(lib_file_split[0], "use gdnative::prelude::*;");
     assert_eq!(lib_file_split[1], "");
-    assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {}");
-    assert_eq!(lib_file_split[3], "");
-    assert_eq!(lib_file_split[4], "godot_init!(init);");
+    assert_eq!(lib_file_split[2], "fn init(handle: InitHandle) {");
+    assert_eq!(lib_file_split[3], "}");
+    assert_eq!(lib_file_split[4], "");
+    assert_eq!(lib_file_split[5], "godot_init!(init);");
 
     // 6. Assert that the Cargo.toml file of the library is what we expect.
     let cargo_toml_string = read_to_string("platformer_modules/Cargo.toml")?;
