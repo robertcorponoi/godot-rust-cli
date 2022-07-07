@@ -9,6 +9,7 @@ use std::sync::mpsc::channel;
 use chrono::Local;
 use convert_case::{Case, Casing};
 use notify::{op, raw_watcher, RawEvent, RecursiveMode, Watcher};
+use rust_codegen::Scope;
 use walkdir::WalkDir;
 
 use crate::build_utils::build_for_platform;
@@ -125,11 +126,14 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
         .to_string();
     let config = create_initial_config(name.to_owned(), godot_project_dir_name, plugin);
 
-    // Creates the initial `lib.rs` file in the library directory.
-    let lib_template = include_str!("./templates/lib.rs");
-    write_and_fmt("src/lib.rs", lib_template).expect(
-        "Unable to create the initial lib.rs file in the library while creating the library",
-    );
+    // Build the initial contents of the Rust library's `lib.rs` file which
+    // is used to initialize Godot.
+    log_info_to_console("Creating initial lib.rs file");
+    let mut scope = Scope::new();
+    scope.import("gdnative::prelude", "*");
+    scope.new_fn("init").arg("handle", "InitHandle");
+    scope.raw("godot_init!(init);");
+    write("src/lib.rs", scope.to_string()).expect("Unable to create the initial lib.rs file");
 
     log_styled_message_to_console(
         "running initial build to generate Godot project structure",
