@@ -26,6 +26,7 @@ syn = { version = "1.0.98", features = ["full", "parsing", "printing", "visit", 
 convert_case = "0.5.0"
 walkdir = "2.3.2"
 lazy_static = "1.4.0"
+rust-codegen = "0.1.1"
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
