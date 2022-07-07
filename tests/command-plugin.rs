@@ -133,8 +133,8 @@ fn plugin_create_godot_structure() -> Result<(), Box<dyn Error>> {
         .map(|x| x.replace("\r", ""))
         .collect::<Vec<String>>();
     assert_eq!(plugin_cfg_split[0], "[plugin]");
-    assert_eq!(plugin_cfg_split[1], "name = \"Directory Browser\"");
-    assert_eq!(plugin_cfg_split[5], "script = \"directory_browser.gdns\"");
+    assert_eq!(plugin_cfg_split[1], "name = 'Directory Browser'");
+    assert_eq!(plugin_cfg_split[5], "script = 'directory_browser.gdns'");
 
     // 7. Assert that the plugin's gdns file exists.
     let plugin_gdns_path =
