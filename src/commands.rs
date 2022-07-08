@@ -28,6 +28,7 @@ use crate::log_utils::{
     log_success_to_console, log_version, ConsoleColors,
 };
 use crate::path_utils::{exit_if_not_lib_dir, get_absolute_path};
+use crate::plugin_config::PluginConfig;
 
 lazy_static! {
     static ref VALID_PLATFORMS: HashMap<&'static str, &'static str> = {
@@ -152,15 +153,11 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
 
         command_create(&name);
 
-        let plugin_cfg = include_str!("./templates/plugin-cfg.txt");
-        let plugin_cfg_with_name = plugin_cfg.replace("PLUGIN_NAME", &name);
-        let plugin_cfg_with_script = plugin_cfg_with_name.replace(
-            "PLUGIN_GDNS_LOCATION",
-            &format!("{}.gdns", &module_name_snake_case),
-        );
-        write(godot_plugin_cfg, plugin_cfg_with_script).expect(
-            "Unable to write plugin.cfg file in the Godot project while creating the library",
-        );
+        // Every Godot plugin needs to have a config file that describes the
+        // plugin.
+        // More about this can be found at: https://docs.godotengine.org/en/stable/tutorials/plugins/editor/making_plugins.html
+        let mut plugin = PluginConfig::new(&name, &format!("{}.gdns", &library_name_normalized));
+        plugin.write(godot_plugin_cfg);
     }
 
     // Creates the gdnative directory within the Godot project.
