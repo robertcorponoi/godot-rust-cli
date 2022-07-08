@@ -22,6 +22,7 @@ use crate::cross_utils::add_image_override_for_platform;
 use crate::definitions::CargoToml;
 use crate::file_utils::write_and_fmt;
 use crate::gdnlib_utils::create_initial_gdnlib;
+use crate::gdns_file::GdnsFile;
 use crate::lib_utils::add_module_to_lib;
 use crate::log_utils::{
     log_error_to_console, log_info_to_console, log_styled_message_to_console,
@@ -324,15 +325,9 @@ pub fn command_create(name: &str) {
         format!("gdnative/{}", &library_name_snake_case)
     };
 
-    // Replace the values in our template with the name of the library and the
-    // pascal version of the module name.
-    let gdns_template = include_str!("./templates/gdns.txt");
-    let gdns_with_module_name = gdns_template
-        .replace("GDNLIB_PATH", &gdnlib_path)
-        .replace("MODULE_NAME", &module_name_pascal_case);
-
-    write(gdns_dir.join(&gdns_file_name), gdns_with_module_name)
-        .expect("Unable to create module's gdns file while creating the module");
+    // Create the gdns file which defines the script in the Godot project.
+    let mut gdns_file = GdnsFile::new(&&module_name_pascal_case, &gdnlib_path);
+    gdns_file.write(gdns_dir.join(&gdns_file_name));
 
     add_module_to_config(name, &mut config);
 
