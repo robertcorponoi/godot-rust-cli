@@ -4,6 +4,7 @@ mod commands;
 mod build_utils;
 mod definitions;
 mod plugin_config;
+mod gdns_file;
 
 #[path = "./utils/config.rs"]
 mod config_utils;
