@@ -24,10 +24,7 @@ use crate::file_utils::write_and_fmt;
 use crate::gdnlib_utils::create_initial_gdnlib;
 use crate::gdns_file::GdnsFile;
 use crate::lib_utils::add_module_to_lib;
-use crate::log_utils::{
-    log_error_to_console, log_info_to_console, log_styled_message_to_console,
-    log_success_to_console, log_version, ConsoleColors,
-};
+use crate::log_utils::{log_error_to_console, log_info_to_console, log_success_to_console};
 use crate::path_utils::{exit_if_not_lib_dir, get_absolute_path};
 use crate::plugin_config::PluginConfig;
 
@@ -52,7 +49,7 @@ lazy_static! {
 /// `plugin` - Indicates whether the library is for a plugin or not.
 /// `skip_build` - Indicates whether the build should be skipped after creating the library or not.
 pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_build: bool) {
-    log_styled_message_to_console("Creating library", ConsoleColors::WHITE);
+    log_info_to_console("Creating library");
 
     let library_name_normalized = name.to_case(Case::Snake);
 
@@ -62,20 +59,14 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
     // If there's already a directory with the library name then we print an
     // error to the console and exit early.
     if library_absolute_path.exists() {
-        log_styled_message_to_console(
-            "Cannot create library, directory with the same name already exists",
-            ConsoleColors::RED,
-        );
+        log_error_to_console("Cannot create library, directory with the same name already exists");
         exit(1);
     }
 
     // If there's not a project.godot file at the root of the provided Godot
     // project directory then we print an error to the console and exit early.
     if !godot_project_absolute_path.join("project.godot").exists() {
-        log_styled_message_to_console(
-            "The Godot project dir provided is not valid",
-            ConsoleColors::RED,
-        );
+        log_error_to_console("The Godot project dir provided is not valid");
         exit(1);
     }
 
@@ -88,7 +79,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
     {
         Ok(_v) => (),
         Err(e) => {
-            log_styled_message_to_console(&e.to_string(), ConsoleColors::RED);
+            log_error_to_console(&e.to_string());
             exit(1);
         }
     }
@@ -137,10 +128,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
     scope.raw("godot_init!(init);");
     write("src/lib.rs", scope.to_string()).expect("Unable to create the initial lib.rs file");
 
-    log_styled_message_to_console(
-        "running initial build to generate Godot project structure",
-        ConsoleColors::CYAN,
-    );
+    log_info_to_console("running initial build to generate Godot project structure");
 
     if plugin {
         let module_name_snake_case = &name.to_case(Case::Snake);
@@ -176,7 +164,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
         Err(e) => {
             // If there was a problem creating the directory then we print the error
             // to the console and exit early.
-            log_styled_message_to_console(&e.to_string(), ConsoleColors::RED);
+            log_error_to_console(&e.to_string());
             exit(1);
         }
     }
@@ -193,7 +181,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
         command_build(false, false);
     }
 
-    log_styled_message_to_console("library created", ConsoleColors::GREEN);
+    log_success_to_console("library created");
 }
 
 /// Creates a module by creating a module for it inside the library and a
@@ -218,15 +206,12 @@ pub fn command_create(name: &str) {
 
     let path_to_godot_project = parent_dir_path.join(&config.godot_project_dir_name);
 
-    log_styled_message_to_console("Creating module", ConsoleColors::WHITE);
+    log_info_to_console("Creating module");
 
     if is_module_in_config(name, &mut config) {
         // If there's already a module with the same name in the config, then
         // we exist early to avoid creating duplicates.
-        log_styled_message_to_console(
-            "A module with the same name already exists",
-            ConsoleColors::RED,
-        );
+        log_error_to_console("A module with the same name already exists");
     }
 
     // Next we build the script based on whether the Godot project is a plugin
@@ -331,7 +316,7 @@ pub fn command_create(name: &str) {
 
     add_module_to_config(name, &mut config);
 
-    log_styled_message_to_console("Module created", ConsoleColors::GREEN);
+    log_success_to_console("Module created");
 }
 
 /// Removes a module by deleting its module file from the library and searching
@@ -343,7 +328,7 @@ pub fn command_create(name: &str) {
 pub fn command_destroy(name: &str) {
     exit_if_not_lib_dir();
 
-    log_styled_message_to_console("destroying module...", ConsoleColors::WHITE);
+    log_info_to_console("destroying module...");
 
     let mut config = get_config_as_object();
 
@@ -449,7 +434,7 @@ pub fn command_destroy(name: &str) {
     remove_file(module_file_path)
         .expect("Unable to remove the module file from the library while destroying the module");
 
-    log_styled_message_to_console("Module destroyed", ConsoleColors::GREEN);
+    log_success_to_console("Module destroyed");
 }
 
 /// Runs the command to build the library and then copies over the dynamic
@@ -458,7 +443,6 @@ pub fn command_destroy(name: &str) {
 /// `is_release` - Indicates whether the build is a release build or not.
 /// `build_all_platforms` - Indicates whether all platforms should be built or just the native one.
 pub fn command_build(is_release: bool, build_all_platforms: bool) {
-    log_version();
     log_info_to_console("[build] build starting...");
 
     let current_dir = std::env::current_dir().expect("[build] Unable to get current directory.");

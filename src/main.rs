@@ -5,6 +5,7 @@ mod build_utils;
 mod definitions;
 mod plugin_config;
 mod gdns_file;
+mod log_utils;
 
 #[path = "./utils/config.rs"]
 mod config_utils;
@@ -16,8 +17,6 @@ mod file_utils;
 mod gdnlib_utils;
 #[path = "./utils/lib.rs"]
 mod lib_utils;
-#[path = "./utils/log.rs"]
-mod log_utils;
 #[path = "./utils/path.rs"]
 mod path_utils;
 
