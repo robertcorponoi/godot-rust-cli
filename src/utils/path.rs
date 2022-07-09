@@ -6,16 +6,12 @@ use std::{
     process::exit,
 };
 
-use crate::config_utils::get_path_to_config_file;
-use crate::log_utils::{log_styled_message_to_console, ConsoleColors};
+use crate::{config_utils::get_path_to_config_file, log_utils::log_error_to_console};
 
 /// Exits if the current path is not the path to the library's directory.
 pub fn exit_if_not_lib_dir() {
     if !get_path_to_config_file().exists() {
-        log_styled_message_to_console(
-            "This command must be used from the library directory",
-            ConsoleColors::RED,
-        );
+        log_error_to_console("This command must be used from the library directory");
         exit(1);
     }
 }
