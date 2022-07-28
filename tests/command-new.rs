@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::Command;
 
 mod test_utilities;
-use test_utilities::{cleanup_test_files, init_test, Gdnlib};
+use test_utilities::{cleanup_test_files, init_test, init_test_nested_godot_project_dir, Gdnlib};
 
 /// Creates a library and checks that all of the files in the library exist
 /// and that their values are what they should be.
@@ -88,8 +88,7 @@ fn new_create_library_structure() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Creates a library and checks that all of the files in the Godot project
-/// exist and that their values are what they should be.
+/// Creates library for a Godot project that is nested in another directory.
 #[test]
 fn new_create_godot_structure() -> Result<(), Box<dyn Error>> {
     init_test();
@@ -100,7 +99,7 @@ fn new_create_godot_structure() -> Result<(), Box<dyn Error>> {
         .arg("--manifest-path=../Cargo.toml")
         .arg("new")
         .arg("PlatformerModules")
-        .arg("platformer");
+        .arg("./platformer");
     cmd.assert().success();
 
     // 2. Assert that the dynamic library for the library exists in the Godot project's bin directory.
@@ -160,6 +159,40 @@ fn new_create_godot_structure() -> Result<(), Box<dyn Error>> {
     assert_eq!(gdnlib_toml.dependencies.get("Windows.64"), Some(&vec![]));
     assert_eq!(gdnlib_toml.dependencies.get("OSX.64"), Some(&vec![]));
     assert_eq!(gdnlib_toml.dependencies.get("X11.64"), Some(&vec![]));
+
+    cleanup_test_files();
+
+    Ok(())
+}
+
+/// Creates a library and checks that all of the files in the Godot project
+/// exist and that their values are what they should be.
+#[test]
+fn new_nested_godot_project_dir() -> Result<(), Box<dyn Error>> {
+    init_test_nested_godot_project_dir();
+
+    // 1. Assert that the new command was successful.
+    let mut cmd = Command::new("cargo");
+    cmd.arg("run")
+        .arg("--manifest-path=../Cargo.toml")
+        .arg("new")
+        .arg("PlatformerModules")
+        .arg("./games/platformer");
+    cmd.assert().success();
+
+    // 2. Assert that the dynamic library for the library exists in the Godot project's bin directory.
+    let dynamic_library_name = format!(
+        "games/platformer/gdnative/bin/{}/{}platformer_modules{}",
+        std::env::consts::OS.to_lowercase(),
+        std::env::consts::DLL_PREFIX,
+        std::env::consts::DLL_SUFFIX
+    );
+    let dynamic_library_path = Path::new(&dynamic_library_name);
+    assert_eq!(dynamic_library_path.exists(), true);
+
+    // 3. Assert that the gdnlib file exists.
+    let gdnlib_path = Path::new("games/platformer/gdnative/platformer_modules.gdnlib");
+    assert_eq!(gdnlib_path.exists(), true);
 
     cleanup_test_files();
 

@@ -42,12 +42,24 @@ pub fn create_godot_project() {
     std::fs::File::create("platformer/project.godot").expect("Unable to create godot.project file");
 }
 
+/// Creates a nested folder with a project.godot file at the root to simulate the tests
+/// running on an actual Godot project.
+#[allow(dead_code)]
+pub fn create_godot_project_nested() {
+    std::fs::create_dir_all("games/platformer").expect("Unable to create Godot project directory");
+    std::fs::File::create("games/platformer/project.godot").expect("Unable to create godot.project file");
+}
+
 /// Since tests create folders and files we need to remove them before running
 /// the next tests.
 #[allow(dead_code)]
 pub fn cleanup_test_files() {
     if Path::new("platformer").exists() {
         remove_dir_all("platformer").expect("Unable to remove Godot project dir");
+    }
+
+    if Path::new("games").exists() {
+        remove_dir_all("games").expect("Unable to remove nested Godot project dir");
     }
 
     if Path::new("platformer_modules").exists() {
@@ -128,4 +140,12 @@ pub fn init_test() {
     ensure_correct_dir();
     cleanup_test_files();
     create_godot_project();
+}
+
+/// Runs before each test for the nested godot project tests.
+#[allow(dead_code)]
+pub fn init_test_nested_godot_project_dir() {
+    ensure_correct_dir();
+    cleanup_test_files();
+    create_godot_project_nested();
 }
