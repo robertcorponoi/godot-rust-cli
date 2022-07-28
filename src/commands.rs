@@ -19,7 +19,7 @@ use crate::config_utils::{
 use crate::cross_utils::add_image_override_for_platform;
 use crate::definitions::CargoToml;
 use crate::file_utils::write_and_fmt;
-use crate::gdnlib_utils::create_initial_gdnlib;
+use crate::gdnlib::Gdnlib;
 use crate::gdns_file::GdnsFile;
 use crate::lib_utils::add_module_to_lib;
 use crate::log_utils::{log_error_to_console, log_info_to_console, log_success_to_console};
@@ -134,7 +134,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
         .to_str()
         .expect("Unable to convert Godot file name to str")
         .to_string();
-    let config = create_initial_config(name.to_owned(), godot_project_dir_name, plugin);
+    create_initial_config(name.to_owned(), godot_project_dir_name, plugin);
 
     // Build the initial contents of the Rust library's `lib.rs` file which
     // is used to initialize Godot.
@@ -166,8 +166,16 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
         plugin.write(godot_plugin_cfg);
     }
 
-    // Creates the gdnative directory within the Godot project.
-    let gdnative_path = if config.is_plugin {
+    // Create the initial gdnlib file for the Godot project. This file points
+    // to the binaries for popular operating systems so that Godot knows which
+    // one to use.
+    let mut gdnlib = Gdnlib::new(&library_name_normalized, plugin);
+    let gdnlib_pretty_printed = gdnlib.to_string();
+
+    // Next, we create the directory to where the gndlib file will be saved in
+    // the Godot project. As with most operations in the Godot project we have
+    // to handle this differently if the Godot project is a plugin.
+    let gdnlib_dir: PathBuf = if plugin {
         godot_project_absolute_path
             .join("addons")
             .join(&library_name_normalized)
@@ -175,18 +183,23 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
     } else {
         godot_project_absolute_path.join("gdnative")
     };
+    create_dir_all(&gdnlib_dir).expect("Unable to create directory for the gdnlib file");
 
-    match create_dir_all(&gdnative_path) {
+    // Using the directory defined above we can create the path to the gdnlib
+    // file which we will write in the next step.
+    let gdnlib_file_path = gdnlib_dir.join(format!("{}.gdnlib", &library_name_normalized));
+
+    // Finally we can write the gndlib file to the Godot project. As with most
+    // of the write operations if something goes wrong we log the error to the
+    // terminal and exit early.
+    log_info_to_console("Creating the gdnlib file in the Godot project");
+    match write(&gdnlib_file_path, gdnlib_pretty_printed) {
         Ok(_) => (),
         Err(e) => {
-            // If there was a problem creating the directory then we print the error
-            // to the console and exit early.
             log_error_to_console(&e.to_string());
             exit(1);
         }
-    }
-
-    create_initial_gdnlib(&config, godot_project_absolute_path);
+    };
 
     // For testing we skip building the library so that tests won't take a
     // long time to run. We already test building on its own so it isn't
@@ -462,7 +475,7 @@ pub fn command_build(is_release: bool, build_all_platforms: bool) {
 
     let config = get_config_as_object();
 
-    // Normalize the name of the library as snake case as that is what is 
+    // Normalize the name of the library as snake case as that is what is
     // needed to construct the path to the dynamic library.
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
