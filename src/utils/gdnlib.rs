@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::env::current_dir;
 use std::fs::write;
 use std::path::PathBuf;
 use std::process::exit;
@@ -29,24 +28,16 @@ pub struct GdnlibGeneral {
 /// Returns the path to the gdnlib file from the root of the library.
 ///
 /// `config` - The configuration object.
-pub fn get_path_to_gdnlib_file(config: &Config) -> PathBuf {
-    let current_dir = current_dir()
-        .expect("Unable to get current directory while getting the path to the gdnlib file.");
-    let parent_dir = current_dir
-        .parent()
-        .expect("Unable to get parent directory while getting the path to the gndlib file.");
-
+/// `godot_project_absolute_path` - The absolute path to the Godot project.
+pub fn get_path_to_gdnlib_file(config: &Config, godot_project_absolute_path: PathBuf) -> PathBuf {
     let library_name_snake_case = &config.name.to_case(Case::Snake);
     let gdnlib_directory: PathBuf = if config.is_plugin {
-        parent_dir
-            .join(&config.godot_project_dir_name)
+        godot_project_absolute_path
             .join("addons")
             .join(library_name_snake_case)
             .join("gdnative")
     } else {
-        parent_dir
-            .join(&config.godot_project_dir_name)
-            .join("gdnative")
+        godot_project_absolute_path.join("gdnative")
     };
 
     std::fs::create_dir_all(&gdnlib_directory).expect("Unable to create dir for gdnlib file.");
@@ -59,7 +50,8 @@ pub fn get_path_to_gdnlib_file(config: &Config) -> PathBuf {
 /// # Arguments
 ///
 /// `config` - The configuration object.
-pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
+/// `godot_project_absolute_path` - The absolute path to the Godot project.
+pub fn create_initial_gdnlib(config: &Config, godot_project_absolute_path: PathBuf) -> Gdnlib {
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
     let entries_and_dependencies =
@@ -77,21 +69,10 @@ pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
         dependencies: entries_and_dependencies.1,
     };
 
-    save_gdnlib_to_file(config, &mut gdnlib);
+    save_gdnlib_to_file(config, &mut gdnlib, godot_project_absolute_path);
 
     return gdnlib;
 }
-
-// /// Returns the config as an object that can be operated on.
-// ///
-// /// `config` - The configuration object.
-// pub fn get_gdnlib_as_object(config: &Config) -> Gdnlib {
-//     let gdnlib_file_path = get_path_to_gdnlib_file(config);
-//     let gdnlib_as_string =
-//         read_to_string(gdnlib_file_path).expect("Unable to read gdnlib file to string.");
-
-//     return toml::from_str(&gdnlib_as_string).expect("Unable to parse gdnlib file.");
-// }
 
 /// Saves the gdnlib file to the Godot project directory.
 ///
@@ -99,8 +80,13 @@ pub fn create_initial_gdnlib(config: &Config) -> Gdnlib {
 ///
 /// `config` - The configuration object.
 /// `gdnlib_file` - The gdnlib object to save.
-pub fn save_gdnlib_to_file(config: &Config, gdnlib: &mut Gdnlib) {
-    let gdnlib_file_path = get_path_to_gdnlib_file(config);
+/// `godot_project_absolute_path` - The absolute path to the Godot project.
+pub fn save_gdnlib_to_file(
+    config: &Config,
+    gdnlib: &mut Gdnlib,
+    godot_project_absolute_path: PathBuf,
+) {
+    let gdnlib_file_path = get_path_to_gdnlib_file(config, godot_project_absolute_path);
     let gdnlib_as_string =
         toml::to_string_pretty(&gdnlib).expect("Unable to convert gdnlib to string.");
     match write(&gdnlib_file_path, gdnlib_as_string.replace("'", "\"")) {

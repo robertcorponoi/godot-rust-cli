@@ -1,18 +1,16 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::env::{current_dir, set_current_dir};
+use std::env::{consts, current_dir, set_current_dir};
 use std::fs::{create_dir_all, read_to_string, remove_file, write};
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
-use std::sync::mpsc::channel;
 
-use chrono::Local;
 use convert_case::{Case, Casing};
-use notify::{op, raw_watcher, RawEvent, RecursiveMode, Watcher};
 use rust_codegen::Scope;
 use walkdir::WalkDir;
 
-use crate::build_utils::build_for_platform;
+use crate::build_utils::{build_and_watch_for_changes, build_for_platform};
+use crate::cargo_config::CargoConfig;
 use crate::config_utils::{
     add_module_to_config, add_platform_to_config, create_initial_config, get_config_as_object,
     is_module_in_config, remove_module_from_config_if_exists,
@@ -51,9 +49,17 @@ lazy_static! {
 pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_build: bool) {
     log_info_to_console("Creating library");
 
+    // The input from the user could be in any format but as is standard with
+    // Rust, we want to make sure that the library has a snake_case name so we
+    // enforce that here in case it is not already.
     let library_name_normalized = name.to_case(Case::Snake);
 
+    // Create an absolute path from the current path and then the normalized
+    // version of the Rust library name provided by the user.
     let library_absolute_path = get_absolute_path(&PathBuf::from(&name));
+
+    // To make it easier to write to the Godot project we also want to create
+    // an absolute path to it.
     let godot_project_absolute_path = get_absolute_path(&godot_project_dir);
 
     // If there's already a directory with the library name then we print an
@@ -85,6 +91,17 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
     }
 
     set_current_dir(&library_name_normalized).expect("Unable to change to library directory");
+
+    // Since we have custom configuration for the Godot project that needs to
+    // be used as env variables, we have to create the initial config.toml
+    // file similarly to how we replaced the Cargo.toml file.
+    let godot_project_absolute_path_as_string = godot_project_absolute_path
+        .as_os_str()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let mut cargo_config = CargoConfig::new(&godot_project_absolute_path_as_string);
+    cargo_config.write();
 
     // Get the base Cargo.toml contents of the library.
     let library_cargo_toml_string = read_to_string("Cargo.toml")
@@ -169,7 +186,7 @@ pub fn command_new(name: &str, godot_project_dir: PathBuf, plugin: bool, skip_bu
         }
     }
 
-    create_initial_gdnlib(&config);
+    create_initial_gdnlib(&config, godot_project_absolute_path);
 
     // For testing we skip building the library so that tests won't take a
     // long time to run. We already test building on its own so it isn't
@@ -196,15 +213,11 @@ pub fn command_create(name: &str) {
     let module_name_snake_case = &name.to_case(Case::Snake);
     let module_name_pascal_case = &name.to_case(Case::Pascal);
 
-    let current_dir_path =
-        current_dir().expect("Unable to get current directory while creating the module");
-    let parent_dir_path = current_dir_path
-        .parent()
-        .expect("Unable to get the shared directory while creating the module");
-
     let mut config = get_config_as_object();
 
-    let path_to_godot_project = parent_dir_path.join(&config.godot_project_dir_name);
+    // Read the cargo config so that we can get the path to the Godot project
+    // from the env vars.
+    let cargo_config = CargoConfig::read();
 
     log_info_to_console("Creating module");
 
@@ -290,12 +303,12 @@ pub fn command_create(name: &str) {
     let library_name_snake_case = &config.name.to_case(Case::Snake);
 
     let gdns_dir: PathBuf = if config.is_plugin {
-        path_to_godot_project
+        PathBuf::from(&cargo_config.env.godot_project_path)
             .join("addons")
             .join(&library_name_snake_case)
             .join("gdnative")
     } else {
-        path_to_godot_project.join("gdnative")
+        PathBuf::from(&cargo_config.env.godot_project_path).join("gdnative")
     };
 
     create_dir_all(&gdns_dir).expect("Unable to create directory for module file in Godot.");
@@ -337,10 +350,10 @@ pub fn command_destroy(name: &str) {
 
     let current_dir_path =
         current_dir().expect("Unable to get current directory while destroying the module");
-    let parent_dir = current_dir_path
-        .parent()
-        .expect("Unable to get shared directory while destroying the module");
-    let path_to_godot_project = parent_dir.join(&config.godot_project_dir_name);
+
+    // Read the cargo config so that we can get the path to the Godot project
+    // from the env vars.
+    let cargo_config = CargoConfig::read();
 
     remove_module_from_config_if_exists(&module_name_pascal_case, &mut config);
 
@@ -352,13 +365,15 @@ pub fn command_destroy(name: &str) {
     // gdnative folder in the plugin directory if it's a plugin or just the
     // gdnative folder in the root directory of the Godot project otherwise.
     let possible_gdns_path = if config.is_plugin {
-        path_to_godot_project
+        PathBuf::from(&cargo_config.env.godot_project_path)
             .join("addons")
             .join(&library_name_snake_case)
             .join("gdnative")
             .join(&gdns_file_name)
     } else {
-        path_to_godot_project.join("gdnative").join(&gdns_file_name)
+        PathBuf::from(&cargo_config.env.godot_project_path)
+            .join("gdnative")
+            .join(&gdns_file_name)
     };
 
     if possible_gdns_path.exists() {
@@ -370,11 +385,11 @@ pub fn command_destroy(name: &str) {
         // Otherwise, we search the entire project since the user might have
         // moved it around.
         let search_dir = if config.is_plugin {
-            path_to_godot_project
+            PathBuf::from(&cargo_config.env.godot_project_path)
                 .join("addons")
                 .join(&library_name_snake_case)
         } else {
-            path_to_godot_project.to_owned()
+            PathBuf::from(&cargo_config.env.godot_project_path).to_owned()
         };
 
         for entry in WalkDir::new(search_dir).into_iter().filter_map(|e| e.ok()) {
@@ -445,33 +460,37 @@ pub fn command_destroy(name: &str) {
 pub fn command_build(is_release: bool, build_all_platforms: bool) {
     log_info_to_console("[build] build starting...");
 
-    let current_dir = std::env::current_dir().expect("[build] Unable to get current directory.");
-    let parent_dir = current_dir
-        .parent()
-        .expect("[build] Unable to get parent directory.");
-
     let config = get_config_as_object();
+
+    // Normalize the name of the library as snake case as that is what is 
+    // needed to construct the path to the dynamic library.
     let library_name_snake_case = &config.name.to_case(Case::Snake);
+
+    // We need to load up the cargo config to get the Godot project's path and
+    // also the godot-rust-cli config to get the other details about the
+    // project.
+    let cargo_config = CargoConfig::read();
 
     // Build for the native platform by default.
     let native_platform = std::env::consts::OS.to_lowercase();
+
     build_for_platform(
-        parent_dir,
-        &config,
         &library_name_snake_case,
+        &cargo_config.env.godot_project_path,
         &native_platform,
         is_release,
+        config.is_plugin,
     );
 
     // Build for all platforms if the flag is passed.
     if build_all_platforms {
         for platform in &config.platforms {
             build_for_platform(
-                parent_dir,
-                &config,
                 &library_name_snake_case,
-                &platform.to_lowercase(),
+                &cargo_config.env.godot_project_path,
+                &platform,
                 is_release,
+                config.is_plugin,
             );
         }
     }
@@ -480,72 +499,31 @@ pub fn command_build(is_release: bool, build_all_platforms: bool) {
     log_success_to_console("[build] build complete");
 }
 
-/// Watches the src directory in the library for changes and rebuilds the
-/// library when changes are detected.
+/// Runs the build and watch command from the build crate to run an initial
+/// build on the native platform and then watch for changes to the `src`
+/// directory of the Rust library and rebuild.
 ///
 /// # Arguments
 ///
 /// `is_release` - Indicates whether the build is a release build or not.
-/// `build_all_targets` - Indicates whether all of the targets should be built instead of just the native target.
-pub fn command_build_and_watch(is_release: bool, build_all_targets: bool) {
-    let (tx, rx) = channel();
+pub fn command_build_and_watch(is_release: bool) {
+    exit_if_not_lib_dir();
 
-    build_library_with_timestamp(is_release, build_all_targets);
+    // We need to load up the cargo config to get the Godot project's path and
+    // also the godot-rust-cli config to get the other details about the
+    // project.
+    let cargo_config = CargoConfig::read();
+    let godot_rust_cli_config = get_config_as_object();
 
-    let mut last_checked = Local::now();
-    let mut watcher =
-        raw_watcher(tx).expect("Unable to create watcher to watch library for changes");
-    let current_dir = std::env::current_dir()
-        .expect("Unable to get current directory while attempting to watch library for changes");
-
-    watcher
-        .watch(current_dir.join("src"), RecursiveMode::Recursive)
-        .expect("Unable to watch library directory for changes");
-    loop {
-        match rx.recv() {
-            Ok(RawEvent {
-                path: Some(_path),
-                op: Ok(op),
-                cookie: _,
-            }) => {
-                if op.contains(op::WRITE) {
-                    let now = Local::now();
-                    if (now - last_checked).num_seconds() == 0 {
-                        build_library_with_timestamp(is_release, build_all_targets);
-                    }
-                    last_checked = Local::now();
-                }
-            }
-            Ok(_event) => log_error_to_console("broken event"),
-            Err(e) => log_error_to_console(&e.to_string()),
-        }
-    }
-}
-
-/// Runs the `build_library` function to build the library and copy the
-/// dynamic library file to the Godot project.
-///
-/// In addition to that, it also logs the datetime that the build was
-/// completed as `YYYY-MM-DD HH:MM::SS and lets the user know that it is
-/// waiting for changes before building again.
-///
-/// # Arguments
-///
-/// `is_release` - Indicates whether the build is a release build or not.
-/// `build_all_targets` - Indicates whether all of the targets should be built instead of just the native target.
-pub fn build_library_with_timestamp(is_release: bool, build_all_targets: bool) {
-    command_build(is_release, build_all_targets);
-
-    let dt = Local::now();
-    let current_datetime_formatted = dt.format("%Y-%m-%d %H:%M:%S").to_string();
-
-    // After the build we want to show a message letting the user know that the
-    // build has finished and is waiting for futher changes before rebuilding.
-    log_info_to_console("");
-    log_info_to_console(&format!(
-        "[{}] {}",
-        current_datetime_formatted, "waiting for changes..."
-    ));
+    // Build and watch is only supported for the user's native platform.
+    let native_platform = consts::OS.to_lowercase();
+    build_and_watch_for_changes(
+        &godot_rust_cli_config.name.to_case(Case::Snake),
+        &cargo_config.env.godot_project_path,
+        &native_platform,
+        is_release,
+        godot_rust_cli_config.is_plugin,
+    );
 }
 
 /// Adds a new platform to the platforms that godot-rust-cli will build the

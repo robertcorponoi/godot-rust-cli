@@ -2,10 +2,11 @@
 
 mod commands;
 mod build_utils;
+mod cargo_config;
 mod definitions;
-mod plugin_config;
 mod gdns_file;
 mod log_utils;
+mod plugin_config;
 
 #[path = "./utils/config.rs"]
 mod config_utils;
@@ -221,7 +222,7 @@ fn main() {
             all,
         } => {
             if watch {
-                commands::command_build_and_watch(release, all);
+                commands::command_build_and_watch(release);
             } else {
                 commands::command_build(release, all);
             }
