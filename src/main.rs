@@ -4,6 +4,7 @@ mod commands;
 mod build_utils;
 mod cargo_config;
 mod definitions;
+mod gdnlib;
 mod gdns_file;
 mod log_utils;
 mod plugin_config;
@@ -14,8 +15,6 @@ mod config_utils;
 mod cross_utils;
 #[path = "./utils/file.rs"]
 mod file_utils;
-#[path = "./utils/gdnlib.rs"]
-mod gdnlib_utils;
 #[path = "./utils/lib.rs"]
 mod lib_utils;
 #[path = "./utils/path.rs"]
