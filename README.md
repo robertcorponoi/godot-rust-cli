@@ -12,6 +12,8 @@
 ![Crates.io](https://img.shields.io/crates/l/godot-rust-cli)
 [![Discord](https://img.shields.io/discord/853728834519040030.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/GSf8wvYzxe)
 
+**Note:** As of March 30th, 2023 this project is archived. This could change in the future and the README will be updated when that happens.
+
 Note: Godot Rust CLI is below v1.0.0 and may contain bugs, please report any bugs as issues in the GitHub repo or feel free to ask questions in the [Discord](https://discord.gg/GSf8wvYzxe).
 
 Also keep in mind that the main branch will usually be ahead of the version on [crates.io](https://crates.io/crates/godot-rust-cli).
